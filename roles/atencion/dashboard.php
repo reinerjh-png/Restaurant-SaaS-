@@ -135,7 +135,21 @@ require_once '../../includes/header.php';
     </div>
 </div>
 
+<!-- Modal detalle pedido -->
+<div class="modal-overlay" id="modal-detalle">
+    <div class="modal" style="max-height:85vh;display:flex;flex-direction:column;">
+        <div class="modal-header">
+            <div class="modal-title">📋 Detalle del Pedido</div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-detalle')">✕</button>
+        </div>
+        <div class="modal-body" id="modal-detalle-body" style="overflow-y:auto;">
+            <div class="text-center"><div class="spinner"></div></div>
+        </div>
+    </div>
+</div>
+
 <script>
+const ROL_ACTUAL = '<?= $_SESSION['rol'] ?>';
 let mesaActual = null;
 
 // Reloj
@@ -171,12 +185,24 @@ function clickMesa(mesa) {
         const minutos = mesa.pedido_inicio
             ? Math.round((Date.now() - new Date(mesa.pedido_inicio).getTime()) / 60000) : 0;
         sub.textContent = `⏳ ${minutos} min · ${mesa.num_items} plato(s) · S/ ${parseFloat(mesa.total).toFixed(2)}`;
+        
+        let botonCancelar = '';
+        if (ROL_ACTUAL !== 'atencion' || mesa.num_items == 0) {
+            botonCancelar = `
+                <button onclick="cancelarPedido(${mesa.pedido_id})"
+                   class="btn btn-ghost btn-full mt-8" style="color:var(--rojo);font-weight:600;">❌ Desocupar Mesa (Cancela la comanda)</button>
+            `;
+        }
+        
         body.innerHTML  = `
             <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0;">
+                <button onclick="verDetalle(${mesa.pedido_id})"
+                   class="btn btn-ghost btn-full btn-lg" style="border:2px solid var(--borde);font-weight:700;">👁️ Ver pedido actual</button>
                 <a href="/sistema_restaurante/roles/atencion/comanda.php?pedido_id=${mesa.pedido_id}&mesa_id=${mesa.id}"
                    class="btn btn-naranja btn-full btn-lg">➕ Añadir platos al pedido</a>
                 <a href="/sistema_restaurante/roles/atencion/cobrar.php?pedido_id=${mesa.pedido_id}"
                    class="btn btn-exito btn-full btn-lg">💰 Cobrar pedido (S/ ${parseFloat(mesa.total).toFixed(2)})</a>
+                ${botonCancelar}
             </div>`;
     } else {
         sub.textContent = 'Mesa reservada';
@@ -192,6 +218,59 @@ function iniciarPedido() {
 
     document.getElementById('btn-aqui').onclick = () => crearPedidoYIr('aqui');
     document.getElementById('btn-llevar').onclick = () => crearPedidoYIr('llevar');
+}
+
+async function verDetalle(pedidoId) {
+    Modal.cerrar('modal-mesa');
+    setTimeout(() => Modal.abrir('modal-detalle'), 200);
+    document.getElementById('modal-detalle-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
+    try {
+        const res  = await fetch(`/sistema_restaurante/api/get_pedido_detalle.php?id=${pedidoId}`);
+        const json = await res.json();
+        if (!json.success) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error al cargar</p>'; return; }
+        const p = json.data;
+        let html = `<div style="margin-bottom:14px;">
+            <span class="badge badge-azul">#${p.id}</span>
+            ${p.tipo === 'aqui' ? '🏠 Aquí' : '🛍️ Para llevar'}
+            ${p.mesa_numero ? '· Mesa ' + p.mesa_numero : ''}
+        </div>`;
+        p.items.forEach(item => {
+            html += `<div class="pedido-item" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0;">
+                <div style="flex:1;">
+                    <div class="pedido-item-nombre" style="font-weight:600;font-size:0.9rem;">${item.cantidad}x ${item.nombre}</div>
+                    ${item.opciones ? `<div class="pedido-item-opciones" style="font-size:0.8rem;color:#666;">· ${item.opciones}</div>` : ''}
+                    ${item.notas ? `<div class="pedido-item-opciones" style="font-size:0.8rem;color:#666;">📝 ${item.notas}</div>` : ''}
+                </div>
+                <div class="pedido-item-precio" style="font-weight:700;">S/ ${parseFloat(item.subtotal).toFixed(2)}</div>
+            </div>`;
+        });
+        html += `<div class="pedido-total mt-12" style="display:flex;justify-content:space-between;padding-top:10px;font-weight:bold;font-size:1.1rem;"><span>Total</span><span class="text-rojo">S/ ${parseFloat(p.total).toFixed(2)}</span></div>`;
+        document.getElementById('modal-detalle-body').innerHTML = html;
+    } catch(e) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error de conexión</p>'; }
+}
+
+function cancelarPedido(id) {
+    Modal.cerrar('modal-mesa');
+    setTimeout(() => {
+        confirmar('¿Seguro que quieres descartar este pedido? Esto dejará la mesa libre nuevamente.', async () => {
+            Loading.show();
+            try {
+                const res  = await fetch('/sistema_restaurante/api/cancelar_pedido.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                    body: JSON.stringify({ id })
+                });
+                const json = await res.json();
+                if (json.success) { 
+                    Toast.exito(json.message); 
+                    setTimeout(() => location.reload(), 700); 
+                } else { 
+                    Toast.error(json.message); 
+                    Loading.hide();
+                }
+            } catch(e) { Toast.error('Error de conexión'); Loading.hide(); }
+        });
+    }, 200);
 }
 
 async function crearPedidoYIr(tipo) {

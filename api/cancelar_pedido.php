@@ -6,7 +6,7 @@
  */
 session_start();
 require_once '../config/db.php';
-requireRole(['admin', 'superadmin']);
+requireRole(['atencion', 'admin', 'superadmin']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(false, null, 'Método no permitido');
 
@@ -27,6 +27,16 @@ try {
     if (!$pedido) {
         $db->rollBack();
         jsonResponse(false, null, 'Pedido no encontrado o ya procesado');
+    }
+
+    // Seguridad: El rol atención solo puede cancelar si el pedido no tiene items.
+    if ($_SESSION['rol'] === 'atencion') {
+        $stCheckItems = $db->prepare("SELECT COUNT(id) FROM pedido_items WHERE pedido_id = ?");
+        $stCheckItems->execute([$pedidoId]);
+        if ($stCheckItems->fetchColumn() > 0) {
+            $db->rollBack();
+            jsonResponse(false, null, 'No puedes cancelar esta comanda porque ya tiene platos agregados. Pide ayuda a un Administrador.');
+        }
     }
 
     // Cancelar pedido

@@ -64,8 +64,34 @@ require_once '../../includes/header.php';
 ?>
 
 <style>
-.comanda-layout { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 60px); }
-@media (max-width: 900px) { .comanda-layout { grid-template-columns: 1fr; } }
+.comanda-layout { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 60px); position: relative; }
+.panel-pedido { background:#fff; border-left:1px solid var(--borde); display:flex; flex-direction:column; height:calc(100vh - 60px); position:sticky; top:60px; z-index: 100; }
+.btn-ver-pedido { display: none; position: fixed; bottom: 24px; right: 24px; z-index: 900; background: var(--rojo); color: #fff; padding: 14px 24px; border-radius: 99px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 700; border: none; cursor: pointer; align-items: center; gap: 8px; font-size: 1rem; }
+.btn-ver-pedido .badge-count { background: #fff; color: var(--rojo); padding: 2px 8px; border-radius: 99px; font-size: .85rem; margin-left: 6px; }
+.panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+.btn-cerrar-panel-movil { display: none; }
+
+@media (max-width: 900px) { 
+    .comanda-layout { grid-template-columns: 1fr; } 
+    .panel-pedido {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 85vh;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        border-left: none;
+    }
+    .panel-pedido.abierto { transform: translateY(0); }
+    .btn-ver-pedido { display: flex; }
+    .panel-overlay.activo { display: block; }
+    .btn-cerrar-panel-movil { display: block; background:rgba(0,0,0,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-weight:700;cursor:pointer; }
+}
 </style>
 
 <div class="comanda-layout">
@@ -117,12 +143,16 @@ require_once '../../includes/header.php';
     </div>
 
     <!-- ── Panel lateral del pedido ──── -->
-    <div style="background:#fff;border-left:1px solid var(--borde);display:flex;flex-direction:column;max-height:calc(100vh - 60px);position:sticky;top:60px;">
+    <div class="panel-overlay" id="panel-overlay" onclick="togglePanelPedido()"></div>
+    <div class="panel-pedido" id="panel-pedido">
 
         <!-- Encabezado del pedido -->
-        <div style="padding:16px;background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));color:#fff;">
-            <div style="font-weight:700;font-size:1rem;"><?= htmlspecialchars($mesaLabel) ?></div>
-            <div style="font-size:.8rem;opacity:.85;"><?= $pedido['tipo']==='aqui'?'🏠 Comer aquí':'🛍️ Para llevar' ?> · Pedido #<?= $pedidoId ?></div>
+        <div style="padding:16px;background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));color:#fff;border-radius:inherit;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-weight:700;font-size:1rem;"><?= htmlspecialchars($mesaLabel) ?></div>
+                <div style="font-size:.8rem;opacity:.85;"><?= $pedido['tipo']==='aqui'?'🏠 Comer aquí':'🛍️ Para llevar' ?> · Pedido #<?= $pedidoId ?></div>
+            </div>
+            <button class="btn-cerrar-panel-movil" onclick="togglePanelPedido()">✕</button>
         </div>
 
         <!-- Items del pedido -->
@@ -173,6 +203,11 @@ require_once '../../includes/header.php';
 
 </div>
 
+<!-- Botón flotante para móviles -->
+<button class="btn-ver-pedido" onclick="togglePanelPedido()">
+    🛒 Ver Pedido <span class="badge-count" id="btn-ver-pedido-items"><?= count($items) ?></span>
+</button>
+
 <script>
 const PEDIDO_ID        = <?= $pedidoId ?>;
 const RESTAURANTE_ID   = <?= $restauranteId ?>;
@@ -219,6 +254,7 @@ async function agregarProducto(producto) {
 
 function renderNuevosItems() {
     const cont = document.getElementById('lista-nuevos');
+    actualizarCountItems();
     if (!nuevosItems.length) {
         cont.style.display = 'none';
         document.getElementById('btn-enviar').disabled = true;
@@ -250,6 +286,17 @@ function quitarNuevo(idx) {
     nuevosItems.splice(idx, 1);
     renderNuevosItems();
 }
+
+function actualizarCountItems() {
+    const baseItems = <?= count($items) ?>;
+    document.getElementById('btn-ver-pedido-items').textContent = baseItems + nuevosItems.length;
+}
+
+function togglePanelPedido() {
+    document.getElementById('panel-pedido').classList.toggle('abierto');
+    document.getElementById('panel-overlay').classList.toggle('activo');
+}
+
 
 async function enviarACocina() {
     if (!nuevosItems.length) return;
