@@ -1,0 +1,38 @@
+# ============================================
+# Sistema SaaS Restaurante — .htaccess
+# Autor: Reiner Jiménez (R.DEV)
+# ============================================
+
+Options -Indexes
+
+# Proteger carpeta config/ de acceso directo
+<FilesMatch "^(db\.php|config\.php|install\.sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Proteger archivos sensibles
+<FilesMatch "\.(sql|ini|log|env)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Headers de seguridad
+<IfModule mod_headers.c>
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Comprimir assets
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/json
+</IfModule>
+
+# Cache de assets estáticos
+<FilesMatch "\.(css|js|png|jpg|webp|ico|woff2)$">
+    Header set Cache-Control "max-age=2592000, public"
+</FilesMatch>
+
+# UTF-8 por defecto
+AddDefaultCharset UTF-8
