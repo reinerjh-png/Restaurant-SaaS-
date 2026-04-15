@@ -194,14 +194,35 @@ function tiempoTranscurrido(fechaStr) {
 }
 
 /* ── CONFIRMACIÓN ────────────────────────────────────────────── */
-function confirmar(mensaje, callback) {
+/**
+ * @param {string}   mensaje    - Texto a mostrar
+ * @param {Function} callback   - Se ejecuta al confirmar
+ * @param {Function} [onCancel] - Se ejecuta al cancelar (opcional)
+ */
+function confirmar(mensaje, callback, onCancel) {
     const overlay = document.getElementById('modal-confirmar');
-    if (!overlay) { if (window.confirm(mensaje)) callback(); return; }
+    if (!overlay) {
+        if (window.confirm(mensaje)) callback();
+        else if (onCancel) onCancel();
+        return;
+    }
     document.getElementById('modal-confirmar-msg').textContent = mensaje;
+
+    // Botón confirmar
     document.getElementById('modal-confirmar-btn').onclick = () => {
         Modal.cerrar('modal-confirmar');
         callback();
     };
+
+    // Botón cancelar — ejecutar onCancel si se proporcionó
+    const btnCan = document.querySelector('#modal-confirmar .btn-ghost');
+    if (btnCan) {
+        btnCan.onclick = () => {
+            Modal.cerrar('modal-confirmar');
+            if (onCancel) onCancel();
+        };
+    }
+
     Modal.abrir('modal-confirmar');
 }
 
