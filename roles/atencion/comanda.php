@@ -60,14 +60,41 @@ $items = $stItems->fetchAll();
 $mesaLabel = $pedido['mesa_numero'] ? 'Mesa '.$pedido['mesa_numero'] : 'Para llevar';
 
 $pageTitle = "Comanda · $mesaLabel";
+$hideLogout = true; // Ocultar botón de salir para evitar accidentes
 require_once '../../includes/header.php';
 ?>
 
 <style>
 .comanda-layout { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 60px); position: relative; }
 .panel-pedido { background:#fff; border-left:1px solid var(--borde); display:flex; flex-direction:column; height:calc(100vh - 60px); position:sticky; top:60px; z-index: 100; }
-.btn-ver-pedido { display: none; position: fixed; bottom: 24px; right: 24px; z-index: 900; background: var(--rojo); color: #fff; padding: 14px 24px; border-radius: 99px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 700; border: none; cursor: pointer; align-items: center; gap: 8px; font-size: 1rem; }
-.btn-ver-pedido .badge-count { background: #fff; color: var(--rojo); padding: 2px 8px; border-radius: 99px; font-size: .85rem; margin-left: 6px; }
+
+/* ── Barra inferior fija (solo móvil) ── */
+.barra-ver-pedido {
+    display: none;          /* se muestra solo en mobile via @media */
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 900;
+    height: 64px;
+    background: linear-gradient(135deg, var(--rojo), var(--rojo-dark));
+    color: #fff;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    cursor: pointer;
+    border: none;
+    font-family: var(--fuente);
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.25);
+}
+.barra-ver-pedido .barra-left { display:flex; align-items:center; gap:10px; }
+.barra-ver-pedido .barra-badge {
+    background: rgba(255,255,255,.25);
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: .82rem;
+    font-weight: 700;
+}
+.barra-ver-pedido .barra-subtotal { font-size:1rem; font-weight:800; }
+.barra-ver-pedido .barra-cta { font-size:.85rem; font-weight:700; opacity:.9; }
 .panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
 .btn-cerrar-panel-movil { display: none; }
 
@@ -88,16 +115,18 @@ require_once '../../includes/header.php';
         border-left: none;
     }
     .panel-pedido.abierto { transform: translateY(0); }
-    .btn-ver-pedido { display: flex; }
+    .barra-ver-pedido { display: flex; }
     .panel-overlay.activo { display: block; }
     .btn-cerrar-panel-movil { display: block; background:rgba(0,0,0,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-weight:700;cursor:pointer; }
+    /* Espacio inferior para que la barra no tape el último producto */
+    .menu-scroll-area { padding-bottom: 80px !important; }
 }
 </style>
 
 <div class="comanda-layout">
 
     <!-- ── Menú ─────────────────────────── -->
-    <div style="padding:16px;overflow-y:auto;max-height:calc(100vh - 60px);">
+    <div class="menu-scroll-area" style="padding:16px;overflow-y:auto;max-height:calc(100vh - 60px);">
         <div class="d-flex align-center justify-between mb-12">
             <div>
                 <h2><?= $pedido['tipo']==='aqui'?'🏠':'🛍️' ?> <?= htmlspecialchars($mesaLabel) ?></h2>
@@ -203,9 +232,14 @@ require_once '../../includes/header.php';
 
 </div>
 
-<!-- Botón flotante para móviles -->
-<button class="btn-ver-pedido" onclick="togglePanelPedido()">
-    🛒 Ver Pedido <span class="badge-count" id="btn-ver-pedido-items"><?= count($items) ?></span>
+<!-- Barra inferior fija para móviles -->
+<button class="barra-ver-pedido" onclick="togglePanelPedido()">
+    <div class="barra-left">
+        <span style="font-size:1.3rem;">🛒</span>
+        <span class="barra-badge" id="barra-items-count"><?= count($items) ?> plato(s)</span>
+    </div>
+    <span class="barra-subtotal" id="barra-subtotal">S/ <?= number_format($pedido['total'], 2) ?></span>
+    <span class="barra-cta">Ver pedido →</span>
 </button>
 
 <script>
@@ -237,6 +271,7 @@ async function agregarProducto(producto) {
         cantidad:     1,
         selecciones:  selecciones,
         opciones_str: '',
+        notas:        '',   // nota opcional para cocina
     };
 
     // Cargar nombres de opciones si tiene
@@ -265,20 +300,37 @@ function renderNuevosItems() {
     cont.innerHTML = '<div style="font-size:.75rem;font-weight:700;color:var(--naranja);padding:8px 0;">⏳ Por enviar a cocina:</div>';
     nuevosItems.forEach((it, i) => {
         cont.innerHTML += `
-            <div class="pedido-item">
-                <div style="flex:1;">
-                    <div class="pedido-item-nombre">1x ${it.nombre}</div>
-                    ${it.opciones_str ? `<div class="pedido-item-opciones">${it.opciones_str}</div>` : ''}
-                </div>
+            <div class="pedido-item" style="flex-direction:column;align-items:stretch;gap:6px;">
                 <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="flex:1;">
+                        <div class="pedido-item-nombre">1x ${it.nombre}</div>
+                        ${it.opciones_str ? `<div class="pedido-item-opciones">${it.opciones_str}</div>` : ''}
+                    </div>
                     <span class="pedido-item-precio">S/ ${it.precio.toFixed(2)}</span>
-                    <button onclick="quitarNuevo(${i})" style="background:none;border:none;color:var(--gris);cursor:pointer;font-size:1rem;">✕</button>
+                    <button onclick="quitarNuevo(${i})" style="background:none;border:none;color:var(--gris);cursor:pointer;font-size:1rem;flex-shrink:0;">✕</button>
                 </div>
+                <textarea
+                    id="nota-item-${i}"
+                    rows="1"
+                    placeholder="📝 Nota para cocina (opcional)…"
+                    oninput="actualizarNota(${i}, this.value)"
+                    style="width:100%;font-size:.78rem;border:1px dashed var(--borde);border-radius:6px;padding:6px 8px;background:#fffdf9;color:var(--texto);resize:none;font-family:var(--fuente);outline:none;transition:border-color .2s;"
+                    onfocus="this.style.borderColor='var(--naranja)'"
+                    onblur="this.style.borderColor='var(--borde)'"
+                >${it.notas}</textarea>
             </div>`;
     });
     document.getElementById('btn-enviar').disabled = false;
     document.getElementById('nuevo-total-row').style.display = 'flex';
     document.getElementById('nuevo-total-val').textContent = `S/ ${nuevoTotal.toFixed(2)}`;
+}
+
+/**
+ * Actualiza la nota de un item SIN re-renderizar la lista,
+ * así el usuario no pierde el foco mientras escribe.
+ */
+function actualizarNota(idx, valor) {
+    if (nuevosItems[idx]) nuevosItems[idx].notas = valor.trim();
 }
 
 function quitarNuevo(idx) {
@@ -288,8 +340,16 @@ function quitarNuevo(idx) {
 }
 
 function actualizarCountItems() {
-    const baseItems = <?= count($items) ?>;
-    document.getElementById('btn-ver-pedido-items').textContent = baseItems + nuevosItems.length;
+    const baseItems    = <?= count($items) ?>;
+    const totalItems   = baseItems + nuevosItems.length;
+    const totalBase    = <?= $pedido['total'] ?>;
+    const totalMostrar = totalBase + nuevoTotal;
+
+    // Actualizar la barra inferior fija
+    const barraCount    = document.getElementById('barra-items-count');
+    const barraSub      = document.getElementById('barra-subtotal');
+    if (barraCount) barraCount.textContent = `${totalItems} plato(s)`;
+    if (barraSub)   barraSub.textContent   = `S/ ${totalMostrar.toFixed(2)}`;
 }
 
 function togglePanelPedido() {
@@ -312,7 +372,7 @@ async function enviarACocina() {
         const json = await res.json();
         if (json.success) {
             Toast.exito('🚀 Pedido enviado a cocina!');
-            setTimeout(() => location.reload(), 800);
+            setTimeout(() => window.location.href = 'dashboard.php', 800);
         } else {
             Toast.error(json.message);
             btn.disabled = false;

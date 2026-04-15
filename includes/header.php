@@ -46,7 +46,9 @@ $baseRol = '/sistema_restaurante/roles/' . $_SESSION['rol'];
             <span><?= htmlspecialchars($_SESSION['nombre'] ?? 'Usuario') ?></span>
             <span class="rol-badge rol-<?= $_SESSION['rol'] ?>"><?= $rolLabel ?></span>
         </div>
+        <?php if (!isset($hideLogout) || !$hideLogout): ?>
         <a href="/sistema_restaurante/auth/logout.php" class="btn-logout">⏻ Salir</a>
+        <?php endif; ?>
     </div>
 </nav>
 

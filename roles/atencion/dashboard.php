@@ -234,19 +234,49 @@ async function verDetalle(pedidoId) {
             ${p.tipo === 'aqui' ? '🏠 Aquí' : '🛍️ Para llevar'}
             ${p.mesa_numero ? '· Mesa ' + p.mesa_numero : ''}
         </div>`;
-        p.items.forEach(item => {
+        // Agrupar ítems idénticos antes de mostrar
+        const grupos = agruparItemsDetalle(p.items);
+        grupos.forEach(item => {
             html += `<div class="pedido-item" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0;">
                 <div style="flex:1;">
                     <div class="pedido-item-nombre" style="font-weight:600;font-size:0.9rem;">${item.cantidad}x ${item.nombre}</div>
                     ${item.opciones ? `<div class="pedido-item-opciones" style="font-size:0.8rem;color:#666;">· ${item.opciones}</div>` : ''}
                     ${item.notas ? `<div class="pedido-item-opciones" style="font-size:0.8rem;color:#666;">📝 ${item.notas}</div>` : ''}
                 </div>
-                <div class="pedido-item-precio" style="font-weight:700;">S/ ${parseFloat(item.subtotal).toFixed(2)}</div>
+                <div class="pedido-item-precio" style="font-weight:700;">S/ ${item.subtotalGrupo.toFixed(2)}</div>
             </div>`;
         });
         html += `<div class="pedido-total mt-12" style="display:flex;justify-content:space-between;padding-top:10px;font-weight:bold;font-size:1.1rem;"><span>Total</span><span class="text-rojo">S/ ${parseFloat(p.total).toFixed(2)}</span></div>`;
         document.getElementById('modal-detalle-body').innerHTML = html;
     } catch(e) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error de conexión</p>'; }
+}
+
+/**
+ * Agrupa ítems idénticos (mismo nombre + opciones + notas) en el modal de detalle.
+ * Suma cantidades y subtotales. Ítems con nota distinta permanecen separados.
+ */
+function agruparItemsDetalle(items) {
+    const grupos = new Map();
+    items.forEach(item => {
+        const key = [
+            item.nombre,
+            item.opciones || '',
+            item.notas    || '',
+        ].join('||');
+
+        if (grupos.has(key)) {
+            const g = grupos.get(key);
+            g.cantidad      += (item.cantidad || 1);
+            g.subtotalGrupo += parseFloat(item.subtotal || 0);
+        } else {
+            grupos.set(key, {
+                ...item,
+                cantidad:      item.cantidad || 1,
+                subtotalGrupo: parseFloat(item.subtotal || 0),
+            });
+        }
+    });
+    return Array.from(grupos.values());
 }
 
 function cancelarPedido(id) {

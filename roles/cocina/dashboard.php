@@ -118,6 +118,11 @@ body { background: #1A1A2E; }
 .ck-btn.listo           { background: #27AE60; color: #fff; }
 </style>
 
+<!-- Audio de alerta -->
+<audio id="timbre-audio" preload="auto">
+    <source src="/sistema_restaurante/assets/timbre.mp3" type="audio/mpeg">
+</audio>
+
 <!-- Cocina Header personalizada -->
 <div class="cocina-header">
     <div>
@@ -141,6 +146,55 @@ body { background: #1A1A2E; }
 <script>
 const RESTAURANTE_ID = <?= $restauranteId ?>;
 
+// ── ESTADO PREVIO para detectar cambios ──────────────────────
+// Mapa: pedidoId → cantidad de items en ese pedido
+let estadoPrevio = null; // null = primera carga (no disparar sonido)
+
+function reproducirTimbre() {
+    const audio = document.getElementById('timbre-audio');
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {}); // .catch() silencia error si el navegador bloquea autoplay
+}
+
+/**
+ * Compara el estado previo con el actual y reproduce el timbre
+ * si llegó un pedido nuevo O si un pedido existente tiene más ítems.
+ */
+function detectarCambiosYAlertar(pedidos) {
+    if (estadoPrevio === null) {
+        // Primera carga — guardar estado sin alertar
+        estadoPrevio = construirSnapshot(pedidos);
+        return;
+    }
+
+    const nuevoSnapshot = construirSnapshot(pedidos);
+    let hayNovedad = false;
+
+    for (const [id, count] of nuevoSnapshot) {
+        if (!estadoPrevio.has(id)) {
+            // Pedido nuevo llegó a la cocina
+            hayNovedad = true;
+            break;
+        }
+        if (count > estadoPrevio.get(id)) {
+            // Pedido existente recibió más platos
+            hayNovedad = true;
+            break;
+        }
+    }
+
+    if (hayNovedad) reproducirTimbre();
+    estadoPrevio = nuevoSnapshot;
+}
+
+function construirSnapshot(pedidos) {
+    const map = new Map();
+    (pedidos || []).forEach(p => map.set(p.id, (p.items || []).length));
+    return map;
+}
+
+// ── RELOJ ─────────────────────────────────────────────────────
 function actualizarReloj() {
     const now = new Date();
     const el  = document.getElementById('cocina-reloj');
@@ -149,9 +203,13 @@ function actualizarReloj() {
 actualizarReloj();
 setInterval(actualizarReloj, 1000);
 
+// ── RENDER PEDIDOS ────────────────────────────────────────────
 function renderPedidos(pedidos) {
     const cont  = document.getElementById('cocina-contenido');
     const count = document.getElementById('cocina-count');
+
+    // Detectar cambios ANTES de renderizar
+    detectarCambiosYAlertar(pedidos);
 
     if (!pedidos || pedidos.length === 0) {
         count.textContent = '0 pedidos';
@@ -179,19 +237,24 @@ function renderPedidos(pedidos) {
         card.id = `ck-pedido-${p.id}`;
 
         let itemsHTML = '';
-        (p.items || []).forEach(item => {
-            const estadoClass = item.estado || 'pendiente';
+
+        // Agrupar ítems idénticos (mismo nombre + estado + opciones + notas)
+        const grupos = agruparItems(p.items || []);
+
+        grupos.forEach(grupo => {
+            const estadoClass = grupo.estado || 'pendiente';
             const etiquetas   = {'pendiente':'⏳ Pendiente','en_preparacion':'🔵 Preparando','listo':'✅ Listo','entregado':'📦 Entregado'};
+            const idsJson     = JSON.stringify(grupo.ids);
             itemsHTML += `
-                <div class="ck-item" id="ck-item-${item.id}">
-                    <div class="ck-qty">${item.cantidad}</div>
+                <div class="ck-item">
+                    <div class="ck-qty">${grupo.cantidad}</div>
                     <div class="ck-item-info">
-                        <div class="ck-nombre">${item.nombre}</div>
-                        ${item.opciones ? `<div class="ck-opciones">· ${item.opciones}</div>` : ''}
-                        ${item.notas ? `<div class="ck-opciones">📝 ${item.notas}</div>` : ''}
+                        <div class="ck-nombre">${grupo.nombre}</div>
+                        ${grupo.opciones ? `<div class="ck-opciones">· ${grupo.opciones}</div>` : ''}
+                        ${grupo.notas   ? `<div class="ck-opciones">📝 ${grupo.notas}</div>`   : ''}
                     </div>
                     <button class="ck-btn-listo ck-btn ${estadoClass}"
-                        onclick="cambiarEstadoItem(${item.id}, '${estadoClass}')">
+                        onclick="cambiarEstadoItem(${idsJson}, '${estadoClass}')">
                         ${etiquetas[estadoClass] || estadoClass}
                     </button>
                 </div>`;
@@ -214,15 +277,51 @@ function renderPedidos(pedidos) {
     cont.appendChild(grid);
 }
 
-async function cambiarEstadoItem(itemId, estadoActual) {
-    const estados    = ['pendiente','en_preparacion','listo','entregado'];
-    const siguiente  = estados[(estados.indexOf(estadoActual) + 1) % estados.length];
+// ── AGRUPADOR DE ÍTEMS IDÉNTICOS ──────────────────────────────
+/**
+ * Agrupa ítems con mismo nombre + estado + opciones + notas.
+ * Suma sus cantidades y acumula sus IDs para el cambio de estado en lote.
+ * Ítems con nota distinta permanecen separados.
+ */
+function agruparItems(items) {
+    const grupos = new Map();
+    items.forEach(item => {
+        const key = [
+            item.nombre,
+            item.estado   || 'pendiente',
+            item.opciones || '',
+            item.notas    || '',
+        ].join('||');
+
+        if (grupos.has(key)) {
+            const g = grupos.get(key);
+            g.cantidad += (item.cantidad || 1);
+            g.ids.push(item.id);
+        } else {
+            grupos.set(key, {
+                ...item,
+                cantidad: item.cantidad || 1,
+                ids: [item.id],
+            });
+        }
+    });
+    return Array.from(grupos.values());
+}
+
+// ── CAMBIO DE ESTADO ÍTEM ─────────────────────────────────────
+/**
+ * ids puede ser un número (ítem único) o un array (grupo de ítems idénticos).
+ */
+async function cambiarEstadoItem(ids, estadoActual) {
+    const estados   = ['pendiente','en_preparacion','listo','entregado'];
+    const siguiente = estados[(estados.indexOf(estadoActual) + 1) % estados.length];
+    const itemIds   = Array.isArray(ids) ? ids : [ids];
 
     try {
         const res  = await fetch('/sistema_restaurante/api/marcar_item_listo.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
-            body: JSON.stringify({ item_id: itemId, estado: siguiente })
+            body: JSON.stringify({ item_ids: itemIds, estado: siguiente })
         });
         const json = await res.json();
         if (!json.success) Toast.advertencia(json.message);
@@ -230,6 +329,7 @@ async function cambiarEstadoItem(itemId, estadoActual) {
     } catch(e) {}
 }
 
+// ── INICIO DEL POLLING ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     iniciarPolling(
         `/sistema_restaurante/api/get_pedidos_activos.php?restaurante_id=${RESTAURANTE_ID}`,
@@ -237,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
         10000
     );
 });
-
 </script>
 
 <?php require_once '../../includes/footer.php'; ?>

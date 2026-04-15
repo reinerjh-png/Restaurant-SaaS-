@@ -66,20 +66,37 @@ require_once '../../includes/header.php';
     <!-- Resumen del pedido -->
     <div class="card mb-16">
         <div class="card-title">📋 Resumen del pedido</div>
-        <?php foreach ($items as $item): ?>
+        <?php
+        // Agrupar ítems idénticos (mismo nombre + opciones) — en cobro las notas no se distinguen
+        $itemsAgrupados = [];
+        foreach ($items as $item) {
+            $key = $item['producto_nombre'] . '||' . ($item['opciones_texto'] ?? '');
+            if (isset($itemsAgrupados[$key])) {
+                $itemsAgrupados[$key]['cantidad'] += $item['cantidad'];
+                $itemsAgrupados[$key]['subtotal'] += $item['subtotal'];
+            } else {
+                $itemsAgrupados[$key] = [
+                    'nombre'   => $item['producto_nombre'],
+                    'opciones' => $item['opciones_texto'] ?? '',
+                    'cantidad' => $item['cantidad'],
+                    'subtotal' => $item['subtotal'],
+                ];
+            }
+        }
+        foreach ($itemsAgrupados as $item): ?>
         <div class="pedido-item">
             <div style="flex:1;">
-                <div class="pedido-item-nombre"><?= $item['cantidad'] ?>x <?= htmlspecialchars($item['producto_nombre']) ?></div>
-                <?php if ($item['opciones_texto']): ?>
-                <div class="pedido-item-opciones">· <?= htmlspecialchars($item['opciones_texto']) ?></div>
+                <div class="pedido-item-nombre"><?= $item['cantidad'] ?>x <?= htmlspecialchars($item['nombre']) ?></div>
+                <?php if ($item['opciones']): ?>
+                <div class="pedido-item-opciones">· <?= htmlspecialchars($item['opciones']) ?></div>
                 <?php endif; ?>
             </div>
-            <div class="pedido-item-precio">S/ <?= number_format($item['subtotal'],2) ?></div>
+            <div class="pedido-item-precio">S/ <?= number_format($item['subtotal'], 2) ?></div>
         </div>
         <?php endforeach; ?>
         <div class="pedido-total" style="margin-top:12px;padding-top:12px;border-top:2px solid var(--borde);">
             <span>TOTAL A COBRAR</span>
-            <span class="text-rojo" style="font-size:1.4rem;">S/ <?= number_format($total,2) ?></span>
+            <span class="text-rojo" style="font-size:1.4rem;">S/ <?= number_format($total, 2) ?></span>
         </div>
     </div>
 

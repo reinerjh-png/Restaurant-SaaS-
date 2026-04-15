@@ -11,13 +11,19 @@ requireRole(['cocina', 'atencion', 'admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
-// Pedidos activos con items
+// Pedidos activos con items — Solo si tienen al menos un ítem no entregado
+// (evita mostrar pedidos vacíos en cocina antes de que atención los envíe)
 $stPedidos = $db->prepare("
     SELECT pe.id, pe.tipo, pe.total, pe.created_at,
            m.numero AS mesa_numero
     FROM pedidos pe
     LEFT JOIN mesas m ON m.id = pe.mesa_id
     WHERE pe.restaurante_id = ? AND pe.estado = 'activo'
+      AND EXISTS (
+          SELECT 1 FROM pedido_items pi
+          WHERE pi.pedido_id = pe.id
+            AND pi.estado != 'entregado'
+      )
     ORDER BY pe.created_at ASC
 ");
 $stPedidos->execute([$restauranteId]);
