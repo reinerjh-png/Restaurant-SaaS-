@@ -212,7 +212,7 @@ function editarProducto(prod) {
 
 async function cargarGruposExistentes(productoId) {
     try {
-        const res  = await fetch(`/sistema_restaurante/api/get_opciones.php?producto_id=${productoId}`);
+        const res  = await fetch(`${BASE_URL}/api/get_opciones.php?producto_id=${productoId}`);
         const json = await res.json();
         if (json.success && json.data) {
             json.data.forEach(g => {
@@ -297,7 +297,7 @@ async function guardarProducto() {
     };
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/admin_productos.php', {
+        const res  = await fetch(BASE_URL + '/api/admin_productos.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -315,7 +315,7 @@ async function guardarProducto() {
 function eliminarProducto(id, nombre) {
     confirmar(`¿Eliminar el producto "${nombre}"?`, async () => {
         try {
-            const res  = await fetch('/sistema_restaurante/api/admin_productos.php', {
+            const res  = await fetch(BASE_URL + '/api/admin_productos.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'eliminar', id })

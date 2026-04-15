@@ -34,53 +34,7 @@ require_once '../../includes/header.php';
 ?>
 
 <style>
-/* ── Sidebar overlay (móvil) ─────────────────────────────────────────────── */
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    z-index: 199;
-}
-.sidebar-overlay.activo { display: block; }
 
-/* ── Botón hamburguesa ───────────────────────────────────────────────────── */
-.btn-hamburguesa {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-    color: #fff;
-    padding: 0 10px;
-    height: 48px;
-    border-radius: 8px;
-    transition: background .2s;
-}
-.btn-hamburguesa:hover { background: rgba(255,255,255,.15); }
-
-/* ── Sidebar en móvil ────────────────────────────────────────────────────── */
-@media (max-width: 860px) {
-    .btn-hamburguesa { display: flex; }
-
-    .layout-admin .sidebar {
-        position: fixed;
-        top: 0; left: 0;
-        height: 100%;
-        z-index: 200;
-        transform: translateX(-110%);
-        transition: transform .3s cubic-bezier(.4,0,.2,1);
-        box-shadow: 4px 0 24px rgba(0,0,0,.2);
-    }
-    .layout-admin .sidebar.abierto {
-        transform: translateX(0);
-    }
-    .layout-admin .main-content {
-        margin-left: 0 !important;
-    }
-}
 
 /* ── Mapa de mesas ───────────────────────────────────────────────────────── */
 .mesas-map-grid {
@@ -137,36 +91,7 @@ require_once '../../includes/header.php';
 .btn-del-item:hover { background: #fde8e8; }
 </style>
 
-<!-- Botón hamburguesa — se inyecta en la navbar vía JS -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Inyectar botón hamburguesa al inicio de la navbar-right (o antes)
-    const navbar = document.querySelector('.navbar');
-    if (!navbar) return;
-    const ham = document.createElement('button');
-    ham.className = 'btn-hamburguesa';
-    ham.id = 'btn-hamburguesa';
-    ham.title = 'Menú';
-    ham.innerHTML = '☰';
-    ham.setAttribute('aria-label', 'Abrir menú lateral');
-    navbar.insertBefore(ham, navbar.firstChild);
 
-    const sidebar  = document.querySelector('.layout-admin .sidebar');
-    const overlay  = document.getElementById('sidebar-overlay');
-
-    ham.addEventListener('click', function() { toggleSidebar(); });
-    overlay.addEventListener('click', function() { toggleSidebar(false); });
-
-    function toggleSidebar(force) {
-        const open = (force === undefined) ? !sidebar.classList.contains('abierto') : force;
-        sidebar.classList.toggle('abierto', open);
-        overlay.classList.toggle('activo', open);
-    }
-});
-</script>
-
-<!-- Overlay para cerrar sidebar en móvil -->
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
 <div class="layout-admin">
     <aside class="sidebar">
@@ -406,9 +331,9 @@ function clickMesa(mesa) {
                    class="btn btn-ghost btn-full btn-lg" style="border:2px solid var(--borde);font-weight:700;">
                    👁️ Ver pedido actual
                 </button>
-                <a href="/sistema_restaurante/roles/atencion/comanda.php?pedido_id=${mesa.pedido_id}&mesa_id=${mesa.id}"
+                <a href="<?= BASE_URL ?>/roles/atencion/comanda.php?pedido_id=${mesa.pedido_id}&mesa_id=${mesa.id}"
                    class="btn btn-naranja btn-full btn-lg">➕ Añadir platos al pedido</a>
-                <a href="/sistema_restaurante/roles/atencion/cobrar.php?pedido_id=${mesa.pedido_id}"
+                <a href="<?= BASE_URL ?>/roles/atencion/cobrar.php?pedido_id=${mesa.pedido_id}"
                    class="btn btn-exito btn-full btn-lg">💰 Cobrar pedido (S/ ${parseFloat(mesa.total).toFixed(2)})</a>
                 <button onclick="cancelarPedido(${mesa.pedido_id})"
                    class="btn btn-ghost btn-full mt-8" style="color:var(--rojo);font-weight:600;">
@@ -435,14 +360,14 @@ async function crearPedidoYIr(tipo) {
     Modal.cerrar('modal-tipo');
     Loading.show();
     try {
-        const res  = await fetch('/sistema_restaurante/api/crear_pedido.php', {
+        const res  = await fetch(BASE_URL . '/api/crear_pedido.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ mesa_id: mesaActual.id, tipo })
         });
         const json = await res.json();
         if (json.success) {
-            window.location.href = `/sistema_restaurante/roles/atencion/comanda.php?pedido_id=${json.data.pedido_id}&mesa_id=${mesaActual.id}`;
+            window.location.href = `${BASE_URL}/roles/atencion/comanda.php?pedido_id=${json.data.pedido_id}&mesa_id=${mesaActual.id}`;
         } else {
             Toast.error(json.message);
             Loading.hide();
@@ -457,7 +382,7 @@ function cancelarPedido(id) {
         confirmar('¿Seguro que quieres descartar este pedido? La mesa quedará libre nuevamente.', async () => {
             Loading.show();
             try {
-                const res  = await fetch('/sistema_restaurante/api/cancelar_pedido.php', {
+                const res  = await fetch(BASE_URL + '/api/cancelar_pedido.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                     body: JSON.stringify({ id })
@@ -482,7 +407,7 @@ async function verDetalle(pedidoId, mesaId) {
     document.getElementById('modal-detalle-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
 
     try {
-        const res  = await fetch(`/sistema_restaurante/api/get_pedido_detalle.php?id=${pedidoId}`);
+        const res  = await fetch(`${BASE_URL}/api/get_pedido_detalle.php?id=${pedidoId}`);
         const json = await res.json();
         if (!json.success) {
             document.getElementById('modal-detalle-body').innerHTML = '<p>Error al cargar</p>';
@@ -535,9 +460,9 @@ function renderDetalle(p, mesaId) {
 
     // Botones de acción rápida desde el detalle
     html += `<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
-        <a href="/sistema_restaurante/roles/atencion/comanda.php?pedido_id=${p.id}&mesa_id=${mesaId}"
+        <a href="<?= BASE_URL ?>/roles/atencion/comanda.php?pedido_id=${p.id}&mesa_id=${mesaId}"
            class="btn btn-naranja btn-full">➕ Añadir más platos</a>
-        <a href="/sistema_restaurante/roles/atencion/cobrar.php?pedido_id=${p.id}"
+        <a href="<?= BASE_URL ?>/roles/atencion/cobrar.php?pedido_id=${p.id}"
            class="btn btn-exito btn-full">💰 Cobrar pedido</a>
     </div>`;
 
@@ -551,7 +476,7 @@ async function eliminarItemDetalle(itemId, pedidoId, mesaId) {
     setTimeout(() => {
         confirmar('¿Eliminar este plato del pedido?', async () => {
             try {
-                const res  = await fetch('/sistema_restaurante/api/eliminar_item.php', {
+                const res  = await fetch(BASE_URL . '/api/eliminar_item.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                     body: JSON.stringify({ item_id: itemId })
@@ -583,7 +508,7 @@ async function eliminarItemDetalle(itemId, pedidoId, mesaId) {
 // y actualiza el onclick con datos frescos para que el modal muestre el precio correcto.
 async function refreshMesaCard(mesaId) {
     try {
-        const res  = await fetch('/sistema_restaurante/api/get_mesas.php');
+        const res  = await fetch(BASE_URL . '/api/get_mesas.php');
         const json = await res.json();
         if (!json || !json.data) return;
         const m = json.data.find(x => x.id == mesaId);
@@ -654,7 +579,7 @@ async function guardarMesa() {
     };
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/admin_mesas.php', {
+        const res  = await fetch(BASE_URL . '/api/admin_mesas.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -677,7 +602,7 @@ async function guardarMesa() {
 function eliminarMesa(id, numero) {
     confirmar(`¿Eliminar la Mesa ${numero}? Esta acción no se puede deshacer.`, async () => {
         try {
-            const res  = await fetch('/sistema_restaurante/api/admin_mesas.php', {
+            const res  = await fetch(BASE_URL . '/api/admin_mesas.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'eliminar', id })

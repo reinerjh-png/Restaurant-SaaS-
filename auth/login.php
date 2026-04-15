@@ -8,7 +8,7 @@ require_once '../config/db.php';
 
 // Solo acepta POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /sistema_restaurante/index.php');
+    header('Location: ' . BASE_URL . '/index.php');
     exit;
 }
 
@@ -17,7 +17,7 @@ $password = trim($_POST['password'] ?? '');
 
 if (empty($email) || empty($password)) {
     $_SESSION['login_error'] = 'Por favor completa todos los campos.';
-    header('Location: /sistema_restaurante/index.php');
+    header('Location: ' . BASE_URL . '/index.php');
     exit;
 }
 
@@ -34,13 +34,13 @@ try {
 
     if (!$usuario || !password_verify($password, $usuario['password'])) {
         $_SESSION['login_error'] = 'Credenciales incorrectas. Intenta de nuevo.';
-        header('Location: /sistema_restaurante/index.php');
+        header('Location: ' . BASE_URL . '/index.php');
         exit;
     }
 
     if (!$usuario['activo']) {
         $_SESSION['login_error'] = 'Tu cuenta está desactivada. Contacta al administrador.';
-        header('Location: /sistema_restaurante/index.php');
+        header('Location: ' . BASE_URL . '/index.php');
         exit;
     }
 
@@ -58,16 +58,16 @@ try {
 
     // Redirigir según rol
     $destinos = [
-        'superadmin' => '/sistema_restaurante/roles/superadmin/dashboard.php',
-        'admin'      => '/sistema_restaurante/roles/admin/dashboard.php',
-        'atencion'   => '/sistema_restaurante/roles/atencion/dashboard.php',
-        'cocina'     => '/sistema_restaurante/roles/cocina/dashboard.php',
+        'superadmin' => BASE_URL . '/roles/superadmin/dashboard.php',
+        'admin'      => BASE_URL . '/roles/admin/dashboard.php',
+        'atencion'   => BASE_URL . '/roles/atencion/dashboard.php',
+        'cocina'     => BASE_URL . '/roles/cocina/dashboard.php',
     ];
-    header('Location: ' . ($destinos[$usuario['rol']] ?? '/sistema_restaurante/index.php'));
+    header('Location: ' . ($destinos[$usuario['rol']] ?? BASE_URL . '/index.php'));
     exit;
 
 } catch (PDOException $e) {
     $_SESSION['login_error'] = 'Error del servidor. Intenta más tarde.';
-    header('Location: /sistema_restaurante/index.php');
+    header('Location: ' . BASE_URL . '/index.php');
     exit;
 }

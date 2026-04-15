@@ -115,7 +115,7 @@ function iniciarPolling(endpoint, callback, intervalo = 15000) {
  * Retorna una promesa que resuelve al array de selecciones.
  */
 async function mostrarOpcionesSecuenciales(productoId, nombreProducto) {
-    const res = await fetch(`/sistema_restaurante/api/get_opciones.php?producto_id=${productoId}`);
+    const res = await fetch(`${window.BASE_URL}/api/get_opciones.php?producto_id=${productoId}`);
     const json = await res.json();
     if (!json.success || !json.data || json.data.length === 0) return [];
 
@@ -241,4 +241,39 @@ document.addEventListener('DOMContentLoaded', () => {
     Toast.init();
     Loading.init();
     marcarMenuActivo();
+
+    // Inyectar botón hamburguesa y lógica del menú lateral (layout-admin/atencion)
+    const navbar = document.querySelector('.navbar');
+    const sidebar = document.querySelector('.sidebar');
+    if (navbar && sidebar) {
+        // Inject button inside navbar-brand to group it with the logo
+        const brand = navbar.querySelector('.navbar-brand');
+        if (brand) {
+            const ham = document.createElement('button');
+            ham.className = 'btn-hamburguesa';
+            ham.id = 'btn-hamburguesa';
+            ham.title = 'Menú';
+            ham.innerHTML = '☰';
+            ham.setAttribute('aria-label', 'Abrir menú lateral');
+            brand.insertBefore(ham, brand.firstChild);
+
+            // Overlay para cerrar
+            let overlay = document.getElementById('sidebar-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'sidebar-overlay';
+                overlay.id = 'sidebar-overlay';
+                document.body.appendChild(overlay);
+            }
+
+            ham.addEventListener('click', () => toggleSidebar());
+            overlay.addEventListener('click', () => toggleSidebar(false));
+
+            function toggleSidebar(force) {
+                const open = (force === undefined) ? !sidebar.classList.contains('abierto') : force;
+                sidebar.classList.toggle('abierto', open);
+                overlay.classList.toggle('activo', open);
+            }
+        }
+    }
 });

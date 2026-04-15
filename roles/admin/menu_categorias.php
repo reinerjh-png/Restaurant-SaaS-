@@ -166,7 +166,7 @@ async function guardarCategoria() {
     };
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/admin_categorias.php', {
+        const res  = await fetch(BASE_URL . '/api/admin_categorias.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -186,7 +186,7 @@ async function guardarCategoria() {
 function eliminarCategoria(id, nombre) {
     confirmar(`¿Eliminar la categoría "${nombre}"?  Se eliminarán también sus productos.`, async () => {
         try {
-            const res  = await fetch('/sistema_restaurante/api/admin_categorias.php', {
+            const res  = await fetch(BASE_URL . '/api/admin_categorias.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'eliminar', id })

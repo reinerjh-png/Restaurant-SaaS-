@@ -364,7 +364,7 @@ async function enviarACocina() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/agregar_item.php', {
+        const res  = await fetch(BASE_URL . '/api/agregar_item.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ pedido_id: PEDIDO_ID, items: nuevosItems })

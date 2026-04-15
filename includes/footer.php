@@ -5,7 +5,7 @@
  */
 ?>
     <!-- Scripts globales -->
-    <script src="/sistema_restaurante/assets/js/main.js"></script>
+    <script src="<?= BASE_URL ?>/assets/js/main.js?v=<?= filemtime(__DIR__ . '/../assets/js/main.js') ?>"></script>
     <?php if (isset($extraJS)): ?>
         <?php foreach ((array)$extraJS as $js): ?>
             <script src="<?= $js ?>"></script>

@@ -198,9 +198,9 @@ function clickMesa(mesa) {
             <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0;">
                 <button onclick="verDetalle(${mesa.pedido_id})"
                    class="btn btn-ghost btn-full btn-lg" style="border:2px solid var(--borde);font-weight:700;">👁️ Ver pedido actual</button>
-                <a href="/sistema_restaurante/roles/atencion/comanda.php?pedido_id=${mesa.pedido_id}&mesa_id=${mesa.id}"
+                <a href="<?= BASE_URL ?>/roles/atencion/comanda.php?pedido_id=${mesa.pedido_id}&mesa_id=${mesa.id}"
                    class="btn btn-naranja btn-full btn-lg">➕ Añadir platos al pedido</a>
-                <a href="/sistema_restaurante/roles/atencion/cobrar.php?pedido_id=${mesa.pedido_id}"
+                <a href="<?= BASE_URL ?>/roles/atencion/cobrar.php?pedido_id=${mesa.pedido_id}"
                    class="btn btn-exito btn-full btn-lg">💰 Cobrar pedido (S/ ${parseFloat(mesa.total).toFixed(2)})</a>
                 ${botonCancelar}
             </div>`;
@@ -225,7 +225,7 @@ async function verDetalle(pedidoId) {
     setTimeout(() => Modal.abrir('modal-detalle'), 200);
     document.getElementById('modal-detalle-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
     try {
-        const res  = await fetch(`/sistema_restaurante/api/get_pedido_detalle.php?id=${pedidoId}`);
+        const res  = await fetch(`${BASE_URL}/api/get_pedido_detalle.php?id=${pedidoId}`);
         const json = await res.json();
         if (!json.success) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error al cargar</p>'; return; }
         const p = json.data;
@@ -285,7 +285,7 @@ function cancelarPedido(id) {
         confirmar('¿Seguro que quieres descartar este pedido? Esto dejará la mesa libre nuevamente.', async () => {
             Loading.show();
             try {
-                const res  = await fetch('/sistema_restaurante/api/cancelar_pedido.php', {
+                const res  = await fetch(BASE_URL + '/api/cancelar_pedido.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                     body: JSON.stringify({ id })
@@ -307,14 +307,14 @@ async function crearPedidoYIr(tipo) {
     Modal.cerrar('modal-tipo');
     Loading.show();
     try {
-        const res  = await fetch('/sistema_restaurante/api/crear_pedido.php', {
+        const res  = await fetch(BASE_URL + '/api/crear_pedido.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ mesa_id: mesaActual.id, tipo })
         });
         const json = await res.json();
         if (json.success) {
-            window.location.href = `/sistema_restaurante/roles/atencion/comanda.php?pedido_id=${json.data.pedido_id}&mesa_id=${mesaActual.id}`;
+            window.location.href = `${BASE_URL}/roles/atencion/comanda.php?pedido_id=${json.data.pedido_id}&mesa_id=${mesaActual.id}`;
         } else {
             Toast.error(json.message);
             Loading.hide();
@@ -323,7 +323,7 @@ async function crearPedidoYIr(tipo) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    iniciarPolling('/sistema_restaurante/api/get_mesas.php', function(mesas) {
+    iniciarPolling(BASE_URL + '/api/get_mesas.php', function(mesas) {
         if (!mesas) return;
         mesas.forEach(m => {
             const card = document.querySelector(`.mesa-card[data-id="${m.id}"]`);

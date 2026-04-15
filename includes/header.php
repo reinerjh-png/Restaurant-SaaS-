@@ -16,7 +16,7 @@ $rolLabel = [
 $nombreInicial = strtoupper(substr($_SESSION['nombre'] ?? 'U', 0, 1));
 
 // Prefijo de ruta según rol
-$baseRol = '/sistema_restaurante/roles/' . $_SESSION['rol'];
+$baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -28,18 +28,19 @@ $baseRol = '/sistema_restaurante/roles/' . $_SESSION['rol'];
     <title><?= htmlspecialchars($pageTitle ?? 'Sistema Restaurante') ?> | R.DEV</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/sistema_restaurante/assets/css/main.css">
+    <script>window.BASE_URL = "<?= BASE_URL ?>";</script>
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css?v=<?= filemtime(__DIR__ . '/../assets/css/main.css') ?>">
 </head>
 <body>
 
 <!-- Navbar principal -->
 <nav class="navbar">
     <div class="navbar-brand">
-        <img src="/sistema_restaurante/assets/logo.png" alt="Sabor Perú" style="height: 32px; width: auto; align-self: center;">
+        <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú" style="height: 32px; width: auto; align-self: center;">
     </div>
     <div class="navbar-right">
         <?php if (($_SESSION['rol'] ?? '') === 'superadmin' && strpos($_SERVER['REQUEST_URI'] ?? '', '/roles/admin/') !== false): ?>
-            <a href="/sistema_restaurante/roles/superadmin/dashboard.php" style="margin-right:15px; color:white; font-size:0.8rem; text-decoration:none; background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.3);">🔙 Volver al panel global</a>
+            <a href="<?= BASE_URL ?>/roles/superadmin/dashboard.php" style="margin-right:15px; color:white; font-size:0.8rem; text-decoration:none; background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.3);">🔙 Volver al panel global</a>
         <?php endif; ?>
         <div class="navbar-user">
             <div class="avatar"><?= $nombreInicial ?></div>
@@ -47,7 +48,7 @@ $baseRol = '/sistema_restaurante/roles/' . $_SESSION['rol'];
             <span class="rol-badge rol-<?= $_SESSION['rol'] ?>"><?= $rolLabel ?></span>
         </div>
         <?php if (!isset($hideLogout) || !$hideLogout): ?>
-        <a href="/sistema_restaurante/auth/logout.php" class="btn-logout">⏻ Salir</a>
+        <a href="<?= BASE_URL ?>/auth/logout.php" class="btn-logout">⏻ Salir</a>
         <?php endif; ?>
     </div>
 </nav>

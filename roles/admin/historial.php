@@ -145,7 +145,7 @@ async function verDetalle(pedidoId) {
     Modal.abrir('modal-detalle');
     document.getElementById('modal-detalle-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
     try {
-        const res  = await fetch(`/sistema_restaurante/api/get_pedido_detalle.php?id=${pedidoId}`);
+        const res  = await fetch(`${BASE_URL}/api/get_pedido_detalle.php?id=${pedidoId}`);
         const json = await res.json();
         if (!json.success) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error al cargar</p>'; return; }
         const p = json.data;
@@ -179,7 +179,7 @@ async function verDetalle(pedidoId) {
 function cancelarPedido(id) {
     confirmar('¿Cancelar este pedido? La mesa volverá a estado libre.', async () => {
         try {
-            const res  = await fetch('/sistema_restaurante/api/cancelar_pedido.php', {
+            const res  = await fetch(BASE_URL + '/api/cancelar_pedido.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ id })

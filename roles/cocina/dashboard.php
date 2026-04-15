@@ -120,7 +120,7 @@ body { background: #1A1A2E; }
 
 <!-- Audio de alerta -->
 <audio id="timbre-audio" preload="auto">
-    <source src="/sistema_restaurante/assets/timbre.mp3" type="audio/mpeg">
+    <source src="<?= BASE_URL ?>/assets/timbre.mp3" type="audio/mpeg">
 </audio>
 
 <!-- Cocina Header personalizada -->
@@ -318,7 +318,7 @@ async function cambiarEstadoItem(ids, estadoActual) {
     const itemIds   = Array.isArray(ids) ? ids : [ids];
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/marcar_item_listo.php', {
+        const res  = await fetch(BASE_URL + '/api/marcar_item_listo.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify({ item_ids: itemIds, estado: siguiente })
@@ -332,7 +332,7 @@ async function cambiarEstadoItem(ids, estadoActual) {
 // ── INICIO DEL POLLING ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     iniciarPolling(
-        `/sistema_restaurante/api/get_pedidos_activos.php?restaurante_id=${RESTAURANTE_ID}`,
+        `${BASE_URL}/api/get_pedidos_activos.php?restaurante_id=${RESTAURANTE_ID}`,
         renderPedidos,
         10000
     );

@@ -4,16 +4,17 @@
  * Sistema SaaS Restaurante | R.DEV
  */
 session_start();
+require_once 'config/db.php';
 
 // Si ya está logueado, redirigir a su panel
 if (isset($_SESSION['usuario_id'])) {
     $destinos = [
-        'superadmin' => '/sistema_restaurante/roles/superadmin/dashboard.php',
-        'admin'      => '/sistema_restaurante/roles/admin/dashboard.php',
-        'atencion'   => '/sistema_restaurante/roles/atencion/dashboard.php',
-        'cocina'     => '/sistema_restaurante/roles/cocina/dashboard.php',
+        'superadmin' => BASE_URL . '/roles/superadmin/dashboard.php',
+        'admin'      => BASE_URL . '/roles/admin/dashboard.php',
+        'atencion'   => BASE_URL . '/roles/atencion/dashboard.php',
+        'cocina'     => BASE_URL . '/roles/cocina/dashboard.php',
     ];
-    $destino = $destinos[$_SESSION['rol']] ?? '/sistema_restaurante/index.php';
+    $destino = $destinos[$_SESSION['rol']] ?? BASE_URL . '/index.php';
     header("Location: $destino");
     exit;
 }
@@ -30,7 +31,7 @@ unset($_SESSION['login_error']);
     <title>Login — RestSaaS | R.DEV</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/sistema_restaurante/assets/css/main.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css">
 </head>
 <body>
 
@@ -39,7 +40,7 @@ unset($_SESSION['login_error']);
         <!-- Logo -->
         <div class="login-logo">
             <div class="brand" style="margin-bottom: 5px;">
-                <img src="/sistema_restaurante/assets/logo.png" alt="Sabor Perú Logo" style="max-height: 80px; width: auto; object-fit: contain;">
+                <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú Logo" style="max-height: 80px; width: auto; object-fit: contain;">
             </div>
             <div class="subtitle">Sistema de Gestión para Restaurantes · <strong>R.DEV</strong></div>
         </div>
@@ -55,7 +56,7 @@ unset($_SESSION['login_error']);
         <?php endif; ?>
 
         <!-- Formulario -->
-        <form action="/sistema_restaurante/auth/login.php" method="POST" id="form-login">
+        <form action="<?= BASE_URL ?>/auth/login.php" method="POST" id="form-login">
             <div class="form-group">
                 <label class="form-label" for="email">👤 Usuario</label>
                 <input

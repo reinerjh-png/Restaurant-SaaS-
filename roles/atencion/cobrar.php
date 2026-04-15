@@ -230,7 +230,7 @@ async function confirmarCobro() {
     btn.disabled = true; btn.textContent = '⏳ Procesando...';
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/cobrar_pedido.php', {
+        const res  = await fetch(BASE_URL . '/api/cobrar_pedido.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify({
@@ -242,7 +242,7 @@ async function confirmarCobro() {
         const json = await res.json();
         if (json.success) {
             Toast.exito('✅ ¡Cobro registrado exitosamente!');
-            setTimeout(() => { window.location.href = '/sistema_restaurante/roles/atencion/dashboard.php'; }, 1200);
+            setTimeout(() => { window.location.href = BASE_URL . '/roles/atencion/dashboard.php'; }, 1200);
         } else {
             Toast.error(json.message);
             btn.disabled = false;

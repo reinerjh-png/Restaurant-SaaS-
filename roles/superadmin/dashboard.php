@@ -64,7 +64,7 @@ require_once '../../includes/header.php';
         <div style="padding:20px 16px;border-top:1px solid var(--borde);margin-top:20px;">
             <div style="font-size:.73rem;font-weight:700;color:var(--texto-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Acceso Admin</div>
             <?php foreach ($restaurantes as $r): ?>
-            <a href="/sistema_restaurante/roles/admin/dashboard.php?set_rest_id=<?= $r['id'] ?>"
+            <a href="<?= BASE_URL ?>/roles/admin/dashboard.php?set_rest_id=<?= $r['id'] ?>"
                style="display:block;font-size:.8rem;padding:6px 8px;border-radius:6px;color:var(--texto);margin-bottom:4px;transition:.15s;"
                onmouseover="this.style.background='var(--fondo)'"
                onmouseout="this.style.background='transparent'">

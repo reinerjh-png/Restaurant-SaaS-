@@ -4,10 +4,10 @@
  * Sistema SaaS Restaurante | R.DEV
  */
 session_start();
+require_once '../config/db.php';
 
 // Registrar logout en logs
 if (isset($_SESSION['usuario_id'])) {
-    require_once '../config/db.php';
     try {
         $db  = getDB();
         $log = $db->prepare("INSERT INTO logs_acceso (usuario_id, accion, ip) VALUES (?, 'logout', ?)");
@@ -17,5 +17,5 @@ if (isset($_SESSION['usuario_id'])) {
 
 session_unset();
 session_destroy();
-header('Location: /sistema_restaurante/index.php');
+header('Location: ' . BASE_URL . '/index.php');
 exit;

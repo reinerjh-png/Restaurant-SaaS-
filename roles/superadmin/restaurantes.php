@@ -207,7 +207,7 @@ async function guardarRestaurante() {
     };
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/superadmin_restaurantes.php', {
+        const res  = await fetch(BASE_URL . '/api/superadmin_restaurantes.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -249,7 +249,7 @@ async function guardarAdminRest() {
     }
 
     try {
-        const res  = await fetch('/sistema_restaurante/api/superadmin_restaurantes.php', {
+        const res  = await fetch(BASE_URL . '/api/superadmin_restaurantes.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -268,7 +268,7 @@ function toggleRestaurante(id, activo) {
     const accion = activo ? 'desactivar' : 'activar';
     confirmar(`¿${accion.charAt(0).toUpperCase()+accion.slice(1)} este restaurante?`, async () => {
         try {
-            const res  = await fetch('/sistema_restaurante/api/superadmin_restaurantes.php', {
+            const res  = await fetch(BASE_URL . '/api/superadmin_restaurantes.php', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'toggle', id, nuevo_activo: activo ? 0 : 1 })

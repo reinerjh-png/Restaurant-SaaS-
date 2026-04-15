@@ -4,6 +4,14 @@
 // Sistema SaaS Restaurante | R.DEV
 // ============================================
 
+// Detectar automáticamente la URL base (para localhost vs InfinityFree)
+$host = $_SERVER['HTTP_HOST'] ?? '';
+if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
+    define('BASE_URL', '/sistema_restaurante');
+} else {
+    define('BASE_URL', '');
+}
+
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'restaurante_db');
 define('DB_USER', 'root');
@@ -67,7 +75,7 @@ function requireRole(array $rolesPermitidos): void {
     // y no ha seleccionado uno, entonces redirigirlo al dash global.
     if (!empty($_SESSION['rol']) && $_SESSION['rol'] === 'superadmin') {
         if (empty($_SESSION['restaurante_id']) && strpos($_SERVER['REQUEST_URI'] ?? '', '/roles/superadmin/') === false) {
-            header('Location: /sistema_restaurante/roles/superadmin/dashboard.php');
+            header('Location: ' . BASE_URL . '/roles/superadmin/dashboard.php');
             exit;
         }
     }
@@ -79,7 +87,7 @@ function requireRole(array $rolesPermitidos): void {
         if ($esAjax) {
             jsonResponse(false, null, 'No autorizado');
         } else {
-            header('Location: /sistema_restaurante/index.php');
+            header('Location: ' . BASE_URL . '/index.php');
             exit;
         }
     }
