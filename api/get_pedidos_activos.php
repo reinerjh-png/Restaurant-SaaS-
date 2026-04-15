@@ -29,21 +29,35 @@ $stPedidos = $db->prepare("
 $stPedidos->execute([$restauranteId]);
 $pedidos = $stPedidos->fetchAll();
 
-foreach ($pedidos as &$pedido) {
+if ($pedidos) {
+    $pedidoIds = array_column($pedidos, 'id');
+    $placeholders = implode(',', array_fill(0, count($pedidoIds), '?'));
+    
     $stItems = $db->prepare("
-        SELECT pi.id, pi.cantidad, pi.precio_unitario, pi.subtotal, pi.notas, pi.estado,
+        SELECT pi.pedido_id, pi.id, pi.cantidad, pi.precio_unitario, pi.subtotal, pi.notas, pi.estado,
                pr.nombre,
                GROUP_CONCAT(ov.valor SEPARATOR ' · ') AS opciones
         FROM pedido_items pi
         JOIN productos pr ON pr.id = pi.producto_id
         LEFT JOIN pedido_item_opciones pio ON pio.item_id = pi.id
         LEFT JOIN opciones_valor ov ON ov.id = pio.valor_id
-        WHERE pi.pedido_id = ? AND pi.estado != 'entregado'
+        WHERE pi.pedido_id IN ($placeholders) AND pi.estado != 'entregado'
         GROUP BY pi.id
-        ORDER BY pi.created_at ASC
+        ORDER BY pi.pedido_id ASC, pi.created_at ASC
     ");
-    $stItems->execute([$pedido['id']]);
-    $pedido['items'] = $stItems->fetchAll();
+    $stItems->execute($pedidoIds);
+    $todosItems = $stItems->fetchAll();
+
+    $mapaItems = [];
+    foreach ($todosItems as $item) {
+        $pId = $item['pedido_id'];
+        unset($item['pedido_id']); 
+        $mapaItems[$pId][] = $item;
+    }
+
+    foreach ($pedidos as &$pedido) {
+        $pedido['items'] = $mapaItems[$pedido['id']] ?? [];
+    }
 }
 
 jsonResponse(true, $pedidos, 'OK');

@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.dataset.estado = m.estado;
             card.dataset.pedido = m.pedido_id || '';
         });
-    });
+    }, 25000);
 });
 
 </script>

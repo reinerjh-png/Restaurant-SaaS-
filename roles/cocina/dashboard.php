@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     iniciarPolling(
         `${BASE_URL}/api/get_pedidos_activos.php?restaurante_id=${RESTAURANTE_ID}`,
         renderPedidos,
-        10000
+        20000
     );
 });
 </script>
