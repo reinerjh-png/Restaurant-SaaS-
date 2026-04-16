@@ -135,6 +135,10 @@ require_once '../../includes/header.php';
             <a href="dashboard.php" class="btn btn-ghost btn-sm">← Volver</a>
         </div>
 
+        <div class="mb-12">
+            <input type="text" id="buscador-platos" class="form-control" placeholder="🔍 Buscar plato por nombre..." oninput="buscarPlatos(this.value)" style="width:100%; border-radius: 99px; padding-left: 16px;">
+        </div>
+
         <!-- Categorías tabs -->
         <div class="categorias-tabs mb-12">
             <button class="tab-cat active" onclick="filtrarCat('', this)">Todos</button>
@@ -248,12 +252,32 @@ const RESTAURANTE_ID   = <?= $restauranteId ?>;
 let nuevosItems        = []; // items añadidos en esta sesión pendientes de enviar
 let nuevoTotal         = 0;
 
+let catActual = '';
+let textoBuscado = '';
+
+function aplicarFiltros() {
+    const texto = textoBuscado.toLowerCase();
+    document.querySelectorAll('.menu-item').forEach(p => {
+        const nombre = (p.dataset.nombre || '').toLowerCase();
+        const cat    = p.dataset.cat;
+        
+        const pasaCat = (!catActual || cat == catActual);
+        const pasaTxt = (!texto     || nombre.includes(texto));
+        
+        p.style.display = (pasaCat && pasaTxt) ? '' : 'none';
+    });
+}
+
 function filtrarCat(catId, btn) {
     document.querySelectorAll('.tab-cat').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.menu-item').forEach(p => {
-        p.style.display = (!catId || p.dataset.cat == catId) ? '' : 'none';
-    });
+    catActual = catId;
+    aplicarFiltros();
+}
+
+function buscarPlatos(texto) {
+    textoBuscado = texto;
+    aplicarFiltros();
 }
 
 async function agregarProducto(producto) {
@@ -364,7 +388,7 @@ async function enviarACocina() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
 
     try {
-        const res  = await fetch(BASE_URL . '/api/agregar_item.php', {
+        const res  = await fetch(`${BASE_URL}/api/agregar_item.php`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ pedido_id: PEDIDO_ID, items: nuevosItems })

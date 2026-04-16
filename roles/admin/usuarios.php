@@ -192,7 +192,7 @@ async function guardarUsuario() {
     }
 
     try {
-        const res  = await fetch(BASE_URL . '/api/admin_usuarios.php', {
+        const res  = await fetch(BASE_URL + '/api/admin_usuarios.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -210,7 +210,7 @@ async function guardarUsuario() {
 function eliminarUsuario(id, nombre) {
     confirmar(`¿Eliminar al usuario "${nombre}"?`, async () => {
         try {
-            const res  = await fetch(BASE_URL . '/api/admin_usuarios.php', {
+            const res  = await fetch(BASE_URL + '/api/admin_usuarios.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'eliminar', id })

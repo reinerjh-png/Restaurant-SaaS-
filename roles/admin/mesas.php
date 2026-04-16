@@ -360,7 +360,7 @@ async function crearPedidoYIr(tipo) {
     Modal.cerrar('modal-tipo');
     Loading.show();
     try {
-        const res  = await fetch(BASE_URL . '/api/crear_pedido.php', {
+        const res  = await fetch(BASE_URL + '/api/crear_pedido.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ mesa_id: mesaActual.id, tipo })
@@ -476,7 +476,7 @@ async function eliminarItemDetalle(itemId, pedidoId, mesaId) {
     setTimeout(() => {
         confirmar('¿Eliminar este plato del pedido?', async () => {
             try {
-                const res  = await fetch(BASE_URL . '/api/eliminar_item.php', {
+                const res  = await fetch(BASE_URL + '/api/eliminar_item.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                     body: JSON.stringify({ item_id: itemId })
@@ -508,7 +508,7 @@ async function eliminarItemDetalle(itemId, pedidoId, mesaId) {
 // y actualiza el onclick con datos frescos para que el modal muestre el precio correcto.
 async function refreshMesaCard(mesaId) {
     try {
-        const res  = await fetch(BASE_URL . '/api/get_mesas.php');
+        const res  = await fetch(BASE_URL + '/api/get_mesas.php');
         const json = await res.json();
         if (!json || !json.data) return;
         const m = json.data.find(x => x.id == mesaId);
@@ -579,7 +579,7 @@ async function guardarMesa() {
     };
 
     try {
-        const res  = await fetch(BASE_URL . '/api/admin_mesas.php', {
+        const res  = await fetch(BASE_URL + '/api/admin_mesas.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify(datos)
@@ -602,7 +602,7 @@ async function guardarMesa() {
 function eliminarMesa(id, numero) {
     confirmar(`¿Eliminar la Mesa ${numero}? Esta acción no se puede deshacer.`, async () => {
         try {
-            const res  = await fetch(BASE_URL . '/api/admin_mesas.php', {
+            const res  = await fetch(BASE_URL + '/api/admin_mesas.php', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'eliminar', id })

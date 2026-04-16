@@ -56,6 +56,11 @@ require_once '../../includes/header.php';
                 <button class="btn btn-primario" onclick="nuevoProducto()">➕ Nuevo Producto</button>
             </div>
 
+            <!-- Buscador -->
+            <div class="mb-16">
+                <input type="text" id="buscador-admin" class="form-control" placeholder="🔍 Buscar producto por nombre..." oninput="buscarAdmin(this.value)" style="width:100%; border-radius: 99px; padding-left: 16px;">
+            </div>
+
             <!-- Filtro por categoría -->
             <div class="categorias-tabs mb-16">
                 <button class="tab-cat active" onclick="filtrarCategoria('', this)">Todos</button>
@@ -69,7 +74,7 @@ require_once '../../includes/header.php';
             <!-- Grid de productos -->
             <div id="productos-grid" class="productos-grid">
                 <?php foreach ($productos as $p): ?>
-                <div class="producto-card admin-prod" data-cat="<?= $p['categoria_id'] ?>" data-id="<?= $p['id'] ?>">
+                <div class="producto-card admin-prod" data-cat="<?= $p['categoria_id'] ?>" data-id="<?= $p['id'] ?>" data-nombre="<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>">
                     <div class="producto-thumb" style="<?= !$p['activo'] ? 'filter:grayscale(1);opacity:.5;' : '' ?>">
                         <?= htmlspecialchars($p['categoria_icono']) ?>
                     </div>
@@ -327,12 +332,30 @@ function eliminarProducto(id, nombre) {
     });
 }
 
+let catAdmin = '';
+let txtAdmin = '';
+
+function aplicarFiltrosAdmin() {
+    const texto = txtAdmin.toLowerCase();
+    document.querySelectorAll('.admin-prod').forEach(p => {
+        const nombre = (p.dataset.nombre || '').toLowerCase();
+        const cat = p.dataset.cat;
+        const pasaCat = (!catAdmin || cat == catAdmin);
+        const pasaTxt = (!texto || nombre.includes(texto));
+        p.style.display = (pasaCat && pasaTxt) ? '' : 'none';
+    });
+}
+
 function filtrarCategoria(catId, btn) {
     document.querySelectorAll('.tab-cat').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.admin-prod').forEach(p => {
-        p.style.display = (!catId || p.dataset.cat == catId) ? '' : 'none';
-    });
+    catAdmin = catId;
+    aplicarFiltrosAdmin();
+}
+
+function buscarAdmin(texto) {
+    txtAdmin = texto;
+    aplicarFiltrosAdmin();
 }
 </script>
 
