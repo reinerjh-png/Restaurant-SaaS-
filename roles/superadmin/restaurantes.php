@@ -32,8 +32,8 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon">🌐</span> Dashboard Global</a></li>
-            <li><a href="restaurantes.php" class="active"><span class="menu-icon">🏪</span> Restaurantes</a></li>
+            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
+            <li><a href="restaurantes.php" class="active"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
         </ul>
     </aside>
 
@@ -42,60 +42,68 @@ require_once '../../includes/header.php';
 
             <div class="d-flex align-center justify-between mb-24">
                 <div>
-                    <h1>🏪 Restaurantes</h1>
+                    <h1><i class="fa-solid fa-store" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Restaurantes</h1>
                     <p><?= count($restaurantes) ?> restaurante(s) registrado(s)</p>
                 </div>
-                <button class="btn btn-primario" onclick="nuevoRestaurante()">➕ Nuevo Restaurante</button>
+                <button class="btn btn-primario" onclick="nuevoRestaurante()">
+                    <i class="fa-solid fa-plus"></i> Nuevo Restaurante
+                </button>
             </div>
 
             <!-- Cards de restaurantes -->
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
                 <?php foreach ($restaurantes as $r): ?>
-                <div class="card" style="border-left:4px solid <?= $r['activo']?'var(--exito)':'var(--gris)' ?>;">
+                <div class="card" style="border-left:4px solid <?= $r['activo']?'var(--success)':'var(--border)' ?>;">
                     <div class="d-flex align-center justify-between mb-12">
                         <div>
-                            <h3 style="font-size:1.1rem;"><?= htmlspecialchars($r['nombre']) ?></h3>
+                            <h3 style="font-size:1.05rem;"><?= htmlspecialchars($r['nombre']) ?></h3>
                             <span class="badge <?= $r['activo']?'badge-verde':'badge-gris' ?> mt-4">
-                                <?= $r['activo'] ? '✅ Activo' : '❌ Inactivo' ?>
+                                <?= $r['activo'] ? 'Activo' : 'Inactivo' ?>
                             </span>
                         </div>
-                        <div style="font-size:2.5rem;">🍽️</div>
+                        <div style="width:44px;height:44px;background:var(--primary-light);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:1.2rem;">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-                        <div style="background:var(--fondo);border-radius:8px;padding:10px;text-align:center;">
-                            <div style="font-size:1.3rem;font-weight:800;"><?= $r['total_usuarios'] ?></div>
-                            <div style="font-size:.7rem;color:var(--texto-light);">Usuarios</div>
+                        <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;text-align:center;">
+                            <div style="font-size:1.3rem;font-weight:800;color:var(--text-primary);"><?= $r['total_usuarios'] ?></div>
+                            <div style="font-size:.7rem;color:var(--text-secondary);">Usuarios</div>
                         </div>
-                        <div style="background:var(--fondo);border-radius:8px;padding:10px;text-align:center;">
-                            <div style="font-size:1.3rem;font-weight:800;"><?= $r['total_mesas'] ?></div>
-                            <div style="font-size:.7rem;color:var(--texto-light);">Mesas</div>
+                        <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;text-align:center;">
+                            <div style="font-size:1.3rem;font-weight:800;color:var(--text-primary);"><?= $r['total_mesas'] ?></div>
+                            <div style="font-size:.7rem;color:var(--text-secondary);">Mesas</div>
                         </div>
                     </div>
 
                     <?php if ($r['admin_nombre']): ?>
-                    <div style="background:var(--fondo);border-radius:8px;padding:10px;font-size:.8rem;margin-bottom:14px;">
-                        <strong>👤 Admin:</strong> <?= htmlspecialchars($r['admin_nombre']) ?><br>
-                        <span style="color:var(--texto-light);"><?= htmlspecialchars($r['admin_email']) ?></span>
+                    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;font-size:.8rem;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                        <i class="fa-solid fa-user-tie" style="color:var(--primary);"></i>
+                        <div>
+                            <div style="font-weight:600;"><?= htmlspecialchars($r['admin_nombre']) ?></div>
+                            <div style="color:var(--text-muted);font-size:.75rem;"><?= htmlspecialchars($r['admin_email']) ?></div>
+                        </div>
                     </div>
                     <?php else: ?>
-                    <div style="background:#FEF9E7;border-radius:8px;padding:10px;font-size:.8rem;color:#B7770D;margin-bottom:14px;">
-                        ⚠️ Sin administrador asignado
+                    <div style="background:var(--warning-bg);border-radius:var(--radius-md);padding:10px;font-size:.8rem;color:var(--warning);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Sin administrador asignado
                     </div>
                     <?php endif; ?>
 
                     <div style="display:flex;gap:8px;">
                         <button class="btn btn-ghost btn-sm" style="flex:1;"
                             onclick='editarRestaurante(<?= json_encode($r) ?>)'>
-                            ✏️ Editar
+                            <i class="fa-solid fa-pen"></i> Editar
                         </button>
                         <button class="btn btn-naranja btn-sm" style="flex:1;"
                             onclick="crearAdminRestaurante(<?= $r['id'] ?>, '<?= htmlspecialchars($r['nombre'], ENT_QUOTES) ?>')">
-                            👤 Crear Admin
+                            <i class="fa-solid fa-user-plus"></i> Admin
                         </button>
-                        <button class="btn btn-peligro btn-sm"
+                        <button class="btn btn-peligro btn-sm" title="<?= $r['activo'] ? 'Desactivar' : 'Activar' ?>"
                             onclick="toggleRestaurante(<?= $r['id'] ?>, <?= $r['activo'] ?>)">
-                            <?= $r['activo'] ? '⏸️' : '▶️' ?>
+                            <i class="fa-solid <?= $r['activo'] ? 'fa-pause' : 'fa-play' ?>"></i>
                         </button>
                     </div>
                 </div>
@@ -103,7 +111,7 @@ require_once '../../includes/header.php';
 
                 <?php if (!$restaurantes): ?>
                 <div class="empty-state" style="grid-column:1/-1;">
-                    <div class="icon">🏪</div>
+                    <div class="icon"><i class="fa-solid fa-store"></i></div>
                     <h3>Sin restaurantes registrados</h3>
                     <p>Crea el primer restaurante del sistema</p>
                 </div>
@@ -118,8 +126,8 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-restaurante">
     <div class="modal">
         <div class="modal-header">
-            <div class="modal-title" id="modal-rest-titulo">➕ Nuevo Restaurante</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-restaurante')">✕</button>
+            <div class="modal-title" id="modal-rest-titulo"><i class="fa-solid fa-plus"></i> Nuevo Restaurante</div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-restaurante')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body">
             <form id="form-rest">
@@ -131,15 +139,17 @@ require_once '../../includes/header.php';
                 <div class="form-group">
                     <label class="form-label">Estado</label>
                     <select id="rest-activo" class="form-control">
-                        <option value="1">✅ Activo</option>
-                        <option value="0">❌ Inactivo</option>
+                        <option value="1">Activo</option>
+                        <option value="0">Inactivo</option>
                     </select>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" onclick="Modal.cerrar('modal-restaurante')">Cancelar</button>
-            <button class="btn btn-primario btn-full" onclick="guardarRestaurante()" id="btn-guardar-rest">💾 Guardar</button>
+            <button class="btn btn-primario btn-full" onclick="guardarRestaurante()" id="btn-guardar-rest">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar
+            </button>
         </div>
     </div>
 </div>
@@ -148,8 +158,8 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-admin-rest">
     <div class="modal">
         <div class="modal-header">
-            <div class="modal-title" id="modal-admin-titulo">👤 Crear Administrador</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-admin-rest')">✕</button>
+            <div class="modal-title" id="modal-admin-titulo"><i class="fa-solid fa-user-plus"></i> Crear Administrador</div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-admin-rest')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body">
             <form id="form-admin-rest" autocomplete="off">
@@ -170,7 +180,9 @@ require_once '../../includes/header.php';
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" onclick="Modal.cerrar('modal-admin-rest')">Cancelar</button>
-            <button class="btn btn-primario btn-full" onclick="guardarAdminRest()" id="btn-guardar-admin">💾 Crear Admin</button>
+            <button class="btn btn-primario btn-full" onclick="guardarAdminRest()" id="btn-guardar-admin">
+                <i class="fa-solid fa-floppy-disk"></i> Crear Admin
+            </button>
         </div>
     </div>
 </div>
@@ -180,7 +192,7 @@ let modoEdicionRest = false;
 
 function nuevoRestaurante() {
     modoEdicionRest = false;
-    document.getElementById('modal-rest-titulo').textContent = '➕ Nuevo Restaurante';
+    document.getElementById('modal-rest-titulo').innerHTML = '<i class="fa-solid fa-plus"></i> Nuevo Restaurante';
     document.getElementById('form-rest').reset();
     document.getElementById('rest-id').value = '';
     Modal.abrir('modal-restaurante');
@@ -188,7 +200,7 @@ function nuevoRestaurante() {
 
 function editarRestaurante(r) {
     modoEdicionRest = true;
-    document.getElementById('modal-rest-titulo').textContent = '✏️ Editar Restaurante';
+    document.getElementById('modal-rest-titulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Restaurante';
     document.getElementById('rest-id').value     = r.id;
     document.getElementById('rest-nombre').value = r.nombre;
     document.getElementById('rest-activo').value = r.activo;
@@ -198,14 +210,12 @@ function editarRestaurante(r) {
 async function guardarRestaurante() {
     const btn = document.getElementById('btn-guardar-rest');
     btn.disabled = true;
-
     const datos = {
         accion: modoEdicionRest ? 'editar' : 'crear',
         id:     document.getElementById('rest-id').value,
         nombre: document.getElementById('rest-nombre').value,
         activo: document.getElementById('rest-activo').value,
     };
-
     try {
         const res  = await fetch(BASE_URL + '/api/superadmin_restaurantes.php', {
             method: 'POST',
@@ -213,17 +223,14 @@ async function guardarRestaurante() {
             body: JSON.stringify(datos)
         });
         const json = await res.json();
-        if (json.success) {
-            Toast.exito(json.message);
-            Modal.cerrar('modal-restaurante');
-            setTimeout(() => location.reload(), 700);
-        } else Toast.error(json.message);
+        if (json.success) { Toast.exito(json.message); Modal.cerrar('modal-restaurante'); setTimeout(() => location.reload(), 700); }
+        else Toast.error(json.message);
     } catch(e) { Toast.error('Error de conexión'); }
     finally { btn.disabled = false; }
 }
 
 function crearAdminRestaurante(restId, restNombre) {
-    document.getElementById('modal-admin-titulo').textContent = `👤 Admin para: ${restNombre}`;
+    document.getElementById('modal-admin-titulo').innerHTML = `<i class="fa-solid fa-user-plus"></i> Admin para: ${restNombre}`;
     document.getElementById('admin-rest-id').value = restId;
     document.getElementById('form-admin-rest').reset();
     document.getElementById('admin-rest-id').value = restId;
@@ -233,7 +240,6 @@ function crearAdminRestaurante(restId, restNombre) {
 async function guardarAdminRest() {
     const btn = document.getElementById('btn-guardar-admin');
     btn.disabled = true;
-
     const datos = {
         accion:         'crear_admin',
         restaurante_id: document.getElementById('admin-rest-id').value,
@@ -241,13 +247,7 @@ async function guardarAdminRest() {
         email:          document.getElementById('admin-email').value,
         password:       document.getElementById('admin-password').value,
     };
-
-    if (datos.password.length < 6) {
-        Toast.advertencia('La contraseña debe tener al menos 6 caracteres');
-        btn.disabled = false;
-        return;
-    }
-
+    if (datos.password.length < 6) { Toast.advertencia('La contraseña debe tener al menos 6 caracteres'); btn.disabled = false; return; }
     try {
         const res  = await fetch(BASE_URL + '/api/superadmin_restaurantes.php', {
             method: 'POST',
@@ -255,11 +255,8 @@ async function guardarAdminRest() {
             body: JSON.stringify(datos)
         });
         const json = await res.json();
-        if (json.success) {
-            Toast.exito(json.message);
-            Modal.cerrar('modal-admin-rest');
-            setTimeout(() => location.reload(), 700);
-        } else Toast.error(json.message);
+        if (json.success) { Toast.exito(json.message); Modal.cerrar('modal-admin-rest'); setTimeout(() => location.reload(), 700); }
+        else Toast.error(json.message);
     } catch(e) { Toast.error('Error de conexión'); }
     finally { btn.disabled = false; }
 }

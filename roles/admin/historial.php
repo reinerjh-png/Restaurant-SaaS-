@@ -1,6 +1,6 @@
 <?php
 /**
- * roles/admin/historial.php — Historial de pedidos
+ * roles/admin/historial.php — Historial de pedidos cobrados
  * Sistema SaaS Restaurante | R.DEV
  */
 session_start();
@@ -10,24 +10,30 @@ requireRole(['admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
-$fecha  = $_GET['fecha']  ?? date('Y-m-d');
-$estado = $_GET['estado'] ?? 'cobrado';
+$fecha  = $_GET['fecha']   ?? date('Y-m-d');
+$buscar = trim($_GET['q']  ?? '');
+$tipo   = $_GET['tipo']    ?? '';
 
-$st = $db->prepare("
-    SELECT pe.id, pe.tipo, pe.estado, pe.total, pe.created_at, pe.updated_at,
+$sql = "
+    SELECT pe.id, pe.tipo, pe.total, pe.created_at, pe.updated_at,
            m.numero AS mesa_numero,
            u.nombre AS cajero
     FROM pedidos pe
     LEFT JOIN mesas m ON m.id = pe.mesa_id
     JOIN usuarios u ON u.id = pe.usuario_id
-    WHERE pe.restaurante_id = ? AND DATE(pe.created_at) = ?
-      AND (? = 'todos' OR pe.estado = ?)
-    ORDER BY pe.updated_at DESC
-");
-$st->execute([$restauranteId, $fecha, $estado, $estado]);
+    WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado'
+      AND DATE(pe.created_at) = ?
+";
+$params = [$restauranteId, $fecha];
+if ($tipo) { $sql .= " AND pe.tipo = ?"; $params[] = $tipo; }
+if ($buscar && is_numeric($buscar)) { $sql .= " AND pe.id = ?"; $params[] = (int)$buscar; }
+$sql .= " ORDER BY pe.updated_at DESC LIMIT 100";
+
+$st = $db->prepare($sql);
+$st->execute($params);
 $pedidos = $st->fetchAll();
 
-$pageTitle  = 'Historial de Pedidos';
+$pageTitle  = 'Historial';
 $activeMenu = 'historial';
 require_once '../../includes/header.php';
 ?>
@@ -35,13 +41,13 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon">📊</span> Dashboard</a></li>
-            <li><a href="mesas.php"><span class="menu-icon">🪑</span> Mesas</a></li>
-            <li><a href="menu_categorias.php"><span class="menu-icon">📂</span> Categorías</a></li>
-            <li><a href="menu_productos.php"><span class="menu-icon">🍽️</span> Productos</a></li>
-            <li><a href="usuarios.php"><span class="menu-icon">👥</span> Usuarios</a></li>
-            <li><a href="reportes.php"><span class="menu-icon">📈</span> Reportes</a></li>
-            <li><a href="historial.php" class="active"><span class="menu-icon">🗂️</span> Historial</a></li>
+            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-chart-bar"></i></span> Dashboard</a></li>
+            <li><a href="mesas.php"><span class="menu-icon"><i class="fa-solid fa-chair"></i></span> Mesas</a></li>
+            <li><a href="menu_categorias.php"><span class="menu-icon"><i class="fa-solid fa-folder"></i></span> Categorías</a></li>
+            <li><a href="menu_productos.php"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
+            <li><a href="usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
+            <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
+            <li><a href="historial.php" class="active"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
         </ul>
     </aside>
 
@@ -49,69 +55,74 @@ require_once '../../includes/header.php';
         <div class="page-content">
 
             <div class="d-flex align-center justify-between mb-16">
-                <h1>🗂️ Historial de Pedidos</h1>
+                <div>
+                    <h1><i class="fa-solid fa-clock-rotate-left" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Historial de Pedidos</h1>
+                    <p><?= count($pedidos) ?> pedido(s) encontrados</p>
+                </div>
             </div>
 
             <!-- Filtros -->
             <div class="card mb-16">
-                <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-                    <div class="form-group" style="margin:0;">
+                <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="form-group" style="margin:0;flex:1;min-width:130px;">
                         <label class="form-label">Fecha</label>
                         <input type="date" name="fecha" class="form-control" value="<?= $fecha ?>">
                     </div>
-                    <div class="form-group" style="margin:0;">
-                        <label class="form-label">Estado</label>
-                        <select name="estado" class="form-control">
-                            <option value="cobrado"   <?= $estado==='cobrado'   ?'selected':'' ?>>✅ Cobrados</option>
-                            <option value="cancelado" <?= $estado==='cancelado' ?'selected':'' ?>>❌ Cancelados</option>
-                            <option value="activo"    <?= $estado==='activo'    ?'selected':'' ?>>⏳ Activos</option>
-                            <option value="todos"     <?= $estado==='todos'     ?'selected':'' ?>>📋 Todos</option>
+                    <div class="form-group" style="margin:0;width:140px;">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="aqui"  <?= $tipo==='aqui'?'selected':'' ?>>Comer aquí</option>
+                            <option value="llevar" <?= $tipo==='llevar'?'selected':'' ?>>Para llevar</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primario">🔍 Filtrar</button>
+                    <div class="form-group" style="margin:0;flex:1;min-width:130px;">
+                        <label class="form-label">Buscar # pedido</label>
+                        <input type="text" name="q" class="form-control" placeholder="N° de pedido" value="<?= htmlspecialchars($buscar) ?>">
+                    </div>
+                    <button type="submit" class="btn btn-primario">
+                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                    </button>
+                    <a href="historial.php" class="btn btn-ghost">
+                        <i class="fa-solid fa-rotate-left"></i> Hoy
+                    </a>
                 </form>
             </div>
 
             <!-- Tabla -->
             <div class="card">
-                <div class="card-title">
-                    <?= count($pedidos) ?> pedidos para el <?= date('d/m/Y', strtotime($fecha)) ?>
-                </div>
                 <?php if ($pedidos): ?>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Mesa / Tipo</th>
-                                <th>Estado</th>
+                                <th>Tipo</th>
+                                <th>Mesa</th>
+                                <th>Atendido por</th>
+                                <th>Cobrado</th>
                                 <th>Total</th>
-                                <th>Cajero</th>
-                                <th>Hora</th>
-                                <th>Acciones</th>
+                                <th>Detalle</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($pedidos as $p): ?>
                             <tr>
-                                <td>#<?= $p['id'] ?></td>
+                                <td><strong>#<?= $p['id'] ?></strong></td>
                                 <td>
-                                    <?= $p['tipo']==='aqui' ? '🏠' : '🛍️' ?>
-                                    <?= $p['mesa_numero'] ? 'Mesa '.$p['mesa_numero'] : 'Para llevar' ?>
-                                </td>
-                                <td>
-                                    <span class="badge <?= ['cobrado'=>'badge-verde','cancelado'=>'badge-rojo','activo'=>'badge-naranja'][$p['estado']] ?>">
-                                        <?= ucfirst($p['estado']) ?>
+                                    <span class="badge <?= $p['tipo']==='aqui' ? 'badge-azul' : 'badge-naranja' ?>">
+                                        <i class="fa-solid <?= $p['tipo']==='aqui' ? 'fa-house' : 'fa-bag-shopping' ?>"></i>
+                                        <?= $p['tipo']==='aqui' ? 'Aquí' : 'Llevar' ?>
                                     </span>
                                 </td>
-                                <td><strong>S/ <?= number_format($p['total'],2) ?></strong></td>
-                                <td><?= htmlspecialchars($p['cajero']) ?></td>
-                                <td><?= date('H:i', strtotime($p['created_at'])) ?></td>
+                                <td><?= $p['mesa_numero'] ? 'Mesa '.$p['mesa_numero'] : '—' ?></td>
+                                <td style="font-size:.875rem;color:var(--text-secondary);"><?= htmlspecialchars($p['cajero']) ?></td>
+                                <td style="font-size:.8rem;color:var(--text-secondary);"><?= date('H:i', strtotime($p['updated_at'])) ?></td>
+                                <td><strong style="color:var(--success);">S/ <?= number_format($p['total'], 2) ?></strong></td>
                                 <td>
-                                    <button class="btn btn-ghost btn-sm" onclick="verDetalle(<?= $p['id'] ?>)">👁️ Ver</button>
-                                    <?php if ($p['estado'] === 'activo'): ?>
-                                    <button class="btn btn-peligro btn-sm" onclick="cancelarPedido(<?= $p['id'] ?>)">❌ Cancelar</button>
-                                    <?php endif; ?>
+                                    <button class="btn btn-ghost btn-sm" onclick="verDetallePedido(<?= $p['id'] ?>)" title="Ver detalle">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -119,7 +130,11 @@ require_once '../../includes/header.php';
                     </table>
                 </div>
                 <?php else: ?>
-                <div class="empty-state"><div class="icon">🗂️</div><h3>No hay pedidos</h3><p>Prueba con otro filtro</p></div>
+                <div class="empty-state">
+                    <div class="icon"><i class="fa-solid fa-receipt"></i></div>
+                    <h3>Sin pedidos cobrados</h3>
+                    <p>No hay registros para los filtros seleccionados</p>
+                </div>
                 <?php endif; ?>
             </div>
 
@@ -127,68 +142,62 @@ require_once '../../includes/header.php';
     </div>
 </div>
 
-<!-- Modal detalle pedido -->
-<div class="modal-overlay" id="modal-detalle">
-    <div class="modal">
+<!-- Modal detalle -->
+<div class="modal-overlay" id="modal-detalle-hist">
+    <div class="modal" style="max-height:80vh;display:flex;flex-direction:column;">
         <div class="modal-header">
-            <div class="modal-title">📋 Detalle del Pedido</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-detalle')">✕</button>
+            <div class="modal-title" id="modal-hist-titulo">
+                <i class="fa-solid fa-receipt"></i> Detalle del Pedido
+            </div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-detalle-hist')"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body" id="modal-detalle-body">
+        <div class="modal-body" id="modal-hist-body" style="overflow-y:auto;">
             <div class="text-center"><div class="spinner"></div></div>
         </div>
     </div>
 </div>
 
 <script>
-async function verDetalle(pedidoId) {
-    Modal.abrir('modal-detalle');
-    document.getElementById('modal-detalle-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
+async function verDetallePedido(id) {
+    Modal.abrir('modal-detalle-hist');
+    document.getElementById('modal-hist-titulo').innerHTML = '<i class="fa-solid fa-receipt"></i> Pedido #' + id;
+    document.getElementById('modal-hist-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
+
     try {
-        const res  = await fetch(`${BASE_URL}/api/get_pedido_detalle.php?id=${pedidoId}`);
+        const res  = await fetch(`${BASE_URL}/api/get_pedido_detalle.php?id=${id}`);
         const json = await res.json();
-        if (!json.success) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error al cargar</p>'; return; }
+        if (!json.success) { document.getElementById('modal-hist-body').innerHTML = '<p>Error al cargar</p>'; return; }
         const p = json.data;
-        let html = `<div style="margin-bottom:14px;">
-            <span class="badge badge-azul">#${p.id}</span>
-            ${p.tipo === 'aqui' ? '🏠 Aquí' : '🛍️ Para llevar'}
-            ${p.mesa_numero ? '· Mesa ' + p.mesa_numero : ''}
+
+        let html = `<div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;">
+            <span class="badge badge-gris"><i class="fa-solid fa-hashtag"></i>${p.id}</span>
+            <span class="badge ${p.tipo==='aqui'?'badge-azul':'badge-naranja'}">
+                <i class="fa-solid ${p.tipo==='aqui'?'fa-house':'fa-bag-shopping'}"></i>
+                ${p.tipo==='aqui'?'Comer aquí':'Para llevar'}
+            </span>
+            ${p.mesa_numero ? `<span class="badge badge-gris"><i class="fa-solid fa-chair"></i> Mesa ${p.mesa_numero}</span>` : ''}
         </div>`;
+
         p.items.forEach(item => {
             html += `<div class="pedido-item">
                 <div style="flex:1;">
                     <div class="pedido-item-nombre">${item.cantidad}x ${item.nombre}</div>
                     ${item.opciones ? `<div class="pedido-item-opciones">· ${item.opciones}</div>` : ''}
-                    ${item.notas ? `<div class="pedido-item-opciones">📝 ${item.notas}</div>` : ''}
+                    ${item.notas   ? `<div class="pedido-item-opciones"><i class="fa-solid fa-note-sticky"></i> ${item.notas}</div>` : ''}
                 </div>
                 <div class="pedido-item-precio">S/ ${parseFloat(item.subtotal).toFixed(2)}</div>
             </div>`;
         });
-        html += `<div class="pedido-total mt-12"><span>Total</span><span class="text-rojo">S/ ${parseFloat(p.total).toFixed(2)}</span></div>`;
-        if (p.pagos && p.pagos.length) {
-            html += '<div class="mt-12"><strong style="font-size:.82rem;">Pagos registrados:</strong>';
-            p.pagos.forEach(pg => {
-                html += `<div class="resumen-row"><span>💳 ${pg.metodo}</span><span>S/ ${parseFloat(pg.monto).toFixed(2)}</span></div>`;
-            });
-            html += '</div>';
-        }
-        document.getElementById('modal-detalle-body').innerHTML = html;
-    } catch(e) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error de conexión</p>'; }
-}
 
-function cancelarPedido(id) {
-    confirmar('¿Cancelar este pedido? La mesa volverá a estado libre.', async () => {
-        try {
-            const res  = await fetch(BASE_URL + '/api/cancelar_pedido.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-                body: JSON.stringify({ id })
-            });
-            const json = await res.json();
-            if (json.success) { Toast.exito(json.message); setTimeout(() => location.reload(), 700); }
-            else Toast.error(json.message);
-        } catch(e) { Toast.error('Error de conexión'); }
-    });
+        html += `<div class="pedido-total" style="margin-top:16px;padding-top:12px;border-top:2px solid var(--border);">
+            <span>TOTAL</span>
+            <span style="color:var(--success);">S/ ${parseFloat(p.total).toFixed(2)}</span>
+        </div>`;
+
+        document.getElementById('modal-hist-body').innerHTML = html;
+    } catch(e) {
+        document.getElementById('modal-hist-body').innerHTML = '<p>Error de conexión</p>';
+    }
 }
 </script>
 

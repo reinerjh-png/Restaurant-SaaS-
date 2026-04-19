@@ -22,13 +22,13 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon">📊</span> Dashboard</a></li>
-            <li><a href="mesas.php"><span class="menu-icon">🪑</span> Mesas</a></li>
-            <li><a href="menu_categorias.php" class="active"><span class="menu-icon">📂</span> Categorías</a></li>
-            <li><a href="menu_productos.php"><span class="menu-icon">🍽️</span> Productos</a></li>
-            <li><a href="usuarios.php"><span class="menu-icon">👥</span> Usuarios</a></li>
-            <li><a href="reportes.php"><span class="menu-icon">📈</span> Reportes</a></li>
-            <li><a href="historial.php"><span class="menu-icon">🗂️</span> Historial</a></li>
+            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-chart-bar"></i></span> Dashboard</a></li>
+            <li><a href="mesas.php"><span class="menu-icon"><i class="fa-solid fa-chair"></i></span> Mesas</a></li>
+            <li><a href="menu_categorias.php" class="active"><span class="menu-icon"><i class="fa-solid fa-folder"></i></span> Categorías</a></li>
+            <li><a href="menu_productos.php"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
+            <li><a href="usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
+            <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
+            <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
         </ul>
     </aside>
 
@@ -37,15 +37,16 @@ require_once '../../includes/header.php';
 
             <div class="d-flex align-center justify-between mb-24">
                 <div>
-                    <h1>📂 Categorías del Menú</h1>
+                    <h1><i class="fa-solid fa-folder" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Categorías del Menú</h1>
                     <p><?= count($categorias) ?> categorías registradas</p>
                 </div>
                 <button class="btn btn-primario" onclick="nuevaCategoria()" id="btn-nueva-cat">
-                    ➕ Nueva Categoría
+                    <i class="fa-solid fa-plus"></i> Nueva Categoría
                 </button>
             </div>
 
             <div class="card">
+                <?php if ($categorias): ?>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -60,7 +61,7 @@ require_once '../../includes/header.php';
                         <tbody>
                             <?php foreach ($categorias as $c): ?>
                             <tr>
-                                <td><?= $c['orden'] ?></td>
+                                <td style="color:var(--text-secondary);font-weight:700;"><?= $c['orden'] ?></td>
                                 <td style="font-size:1.5rem;"><?= htmlspecialchars($c['icono']) ?></td>
                                 <td><strong><?= htmlspecialchars($c['nombre']) ?></strong></td>
                                 <td>
@@ -69,20 +70,29 @@ require_once '../../includes/header.php';
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-ghost btn-sm"
-                                        onclick='editarCategoria(<?= json_encode($c) ?>)'>
-                                        ✏️ Editar
-                                    </button>
-                                    <button class="btn btn-peligro btn-sm"
-                                        onclick="eliminarCategoria(<?= $c['id'] ?>, '<?= htmlspecialchars($c['nombre']) ?>')">
-                                        🗑️ Eliminar
-                                    </button>
+                                    <div style="display:flex;gap:6px;">
+                                        <button class="btn btn-ghost btn-sm" title="Editar"
+                                            onclick='editarCategoria(<?= json_encode($c) ?>)'>
+                                            <i class="fa-solid fa-pen"></i> Editar
+                                        </button>
+                                        <button class="btn btn-peligro btn-sm" title="Eliminar"
+                                            onclick="eliminarCategoria(<?= $c['id'] ?>, '<?= htmlspecialchars($c['nombre'], ENT_QUOTES) ?>')">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+                <?php else: ?>
+                <div class="empty-state">
+                    <div class="icon"><i class="fa-solid fa-folder-open"></i></div>
+                    <h3>Sin categorías</h3>
+                    <p>Crea la primera categoría del menú</p>
+                </div>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -93,8 +103,10 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-categoria">
     <div class="modal">
         <div class="modal-header">
-            <div class="modal-title" id="modal-cat-titulo">➕ Nueva Categoría</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-categoria')">✕</button>
+            <div class="modal-title" id="modal-cat-titulo">
+                <i class="fa-solid fa-folder-plus"></i> Nueva Categoría
+            </div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-categoria')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body">
             <form id="form-cat">
@@ -116,15 +128,17 @@ require_once '../../includes/header.php';
                 <div class="form-group">
                     <label class="form-label">Estado</label>
                     <select id="cat-activo" class="form-control">
-                        <option value="1">✅ Activa</option>
-                        <option value="0">❌ Inactiva</option>
+                        <option value="1">Activa</option>
+                        <option value="0">Inactiva</option>
                     </select>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" onclick="Modal.cerrar('modal-categoria')">Cancelar</button>
-            <button class="btn btn-primario btn-full" onclick="guardarCategoria()" id="btn-guardar-cat">💾 Guardar</button>
+            <button class="btn btn-primario btn-full" onclick="guardarCategoria()" id="btn-guardar-cat">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar
+            </button>
         </div>
     </div>
 </div>
@@ -134,7 +148,7 @@ let modoEdicionCat = false;
 
 function nuevaCategoria() {
     modoEdicionCat = false;
-    document.getElementById('modal-cat-titulo').textContent = '➕ Nueva Categoría';
+    document.getElementById('modal-cat-titulo').innerHTML = '<i class="fa-solid fa-folder-plus"></i> Nueva Categoría';
     document.getElementById('form-cat').reset();
     document.getElementById('cat-icono').value = '🍽️';
     document.getElementById('cat-id').value = '';
@@ -143,7 +157,7 @@ function nuevaCategoria() {
 
 function editarCategoria(cat) {
     modoEdicionCat = true;
-    document.getElementById('modal-cat-titulo').textContent = '✏️ Editar Categoría';
+    document.getElementById('modal-cat-titulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Categoría';
     document.getElementById('cat-id').value     = cat.id;
     document.getElementById('cat-nombre').value = cat.nombre;
     document.getElementById('cat-icono').value  = cat.icono;
@@ -176,15 +190,13 @@ async function guardarCategoria() {
             Toast.exito(json.message);
             Modal.cerrar('modal-categoria');
             setTimeout(() => location.reload(), 700);
-        } else {
-            Toast.error(json.message);
-        }
+        } else Toast.error(json.message);
     } catch(e) { Toast.error('Error de conexión'); }
     finally { btn.disabled = false; }
 }
 
 function eliminarCategoria(id, nombre) {
-    confirmar(`¿Eliminar la categoría "${nombre}"?  Se eliminarán también sus productos.`, async () => {
+    confirmar(`¿Eliminar la categoría "${nombre}"? Se eliminarán también sus productos.`, async () => {
         try {
             const res  = await fetch(BASE_URL + '/api/admin_categorias.php', {
                 method: 'POST',

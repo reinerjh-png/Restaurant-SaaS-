@@ -10,14 +10,10 @@ requireRole(['atencion', 'admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $pedidoId = (int)($_GET['pedido_id'] ?? 0);
 
-if (!$pedidoId) {
-    header('Location: dashboard.php');
-    exit;
-}
+if (!$pedidoId) { header('Location: dashboard.php'); exit; }
 
 $db = getDB();
 
-// Cargar pedido con items
 $stPed = $db->prepare("
     SELECT pe.*, m.numero AS mesa_numero
     FROM pedidos pe
@@ -26,12 +22,8 @@ $stPed = $db->prepare("
 ");
 $stPed->execute([$pedidoId, $restauranteId]);
 $pedido = $stPed->fetch();
-if (!$pedido) {
-    header('Location: dashboard.php');
-    exit;
-}
+if (!$pedido) { header('Location: dashboard.php'); exit; }
 
-// Items del pedido
 $stItems = $db->prepare("
     SELECT pi.*, pr.nombre AS producto_nombre,
            GROUP_CONCAT(ov.valor SEPARATOR ' · ') AS opciones_texto
@@ -57,17 +49,21 @@ require_once '../../includes/header.php';
 
     <div class="d-flex align-center justify-between mb-16">
         <div>
-            <h1>💰 Cobrar pedido</h1>
-            <p><?= $pedido['tipo']==='aqui'?'🏠':'🛍️' ?> <?= htmlspecialchars($mesaLabel) ?> · #<?= $pedidoId ?></p>
+            <h1><i class="fa-solid fa-sack-dollar" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Cobrar pedido</h1>
+            <p>
+                <i class="fa-solid <?= $pedido['tipo']==='aqui' ? 'fa-house' : 'fa-bag-shopping' ?>"></i>
+                <?= htmlspecialchars($mesaLabel) ?> · #<?= $pedidoId ?>
+            </p>
         </div>
-        <a href="comanda.php?pedido_id=<?= $pedidoId ?>&mesa_id=<?= $pedido['mesa_id'] ?>" class="btn btn-ghost btn-sm">← Volver</a>
+        <a href="comanda.php?pedido_id=<?= $pedidoId ?>&mesa_id=<?= $pedido['mesa_id'] ?>" class="btn btn-ghost btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
     </div>
 
     <!-- Resumen del pedido -->
     <div class="card mb-16">
-        <div class="card-title">📋 Resumen del pedido</div>
+        <div class="card-title"><i class="fa-solid fa-receipt"></i> Resumen del pedido</div>
         <?php
-        // Agrupar ítems idénticos (mismo nombre + opciones) — en cobro las notas no se distinguen
         $itemsAgrupados = [];
         foreach ($items as $item) {
             $key = $item['producto_nombre'] . '||' . ($item['opciones_texto'] ?? '');
@@ -94,29 +90,29 @@ require_once '../../includes/header.php';
             <div class="pedido-item-precio">S/ <?= number_format($item['subtotal'], 2) ?></div>
         </div>
         <?php endforeach; ?>
-        <div class="pedido-total" style="margin-top:12px;padding-top:12px;border-top:2px solid var(--borde);">
+        <div class="pedido-total" style="margin-top:12px;padding-top:12px;border-top:2px solid var(--border);">
             <span>TOTAL A COBRAR</span>
-            <span class="text-rojo" style="font-size:1.4rem;">S/ <?= number_format($total, 2) ?></span>
+            <span style="color:var(--success);font-size:1.4rem;">S/ <?= number_format($total, 2) ?></span>
         </div>
     </div>
 
     <!-- Métodos de pago -->
     <div class="card mb-16">
-        <div class="card-title">💳 Método(s) de pago</div>
+        <div class="card-title"><i class="fa-solid fa-credit-card"></i> Método(s) de pago</div>
         <div class="metodos-pago">
             <?php
             $metodos = [
-                ['efectivo',      '💵', 'Efectivo'],
-                ['yape',          '📱', 'Yape / Plin'],
-                ['transferencia', '🏦', 'Transferencia'],
-                ['tarjeta',       '💳', 'Tarjeta'],
-                ['otro',          '🔄', 'Otro'],
+                ['efectivo',      'fa-money-bill-wave',  'Efectivo'],
+                ['yape',          'fa-mobile-screen',    'Yape / Plin'],
+                ['transferencia', 'fa-building-columns', 'Transferencia'],
+                ['tarjeta',       'fa-credit-card',      'Tarjeta'],
+                ['otro',          'fa-rotate',           'Otro'],
             ];
             foreach ($metodos as [$key, $icon, $label]): ?>
             <div class="metodo-item" id="metodo-<?= $key ?>">
                 <div class="metodo-header" onclick="toggleMetodo('<?= $key ?>')">
-                    <div class="metodo-check" id="check-<?= $key ?>">✓</div>
-                    <span class="metodo-icon"><?= $icon ?></span>
+                    <div class="metodo-check" id="check-<?= $key ?>"><i class="fa-solid fa-check"></i></div>
+                    <span class="metodo-icon"><i class="fa-solid <?= $icon ?>"></i></span>
                     <span class="metodo-nombre"><?= $label ?></span>
                 </div>
                 <div class="metodo-monto-wrap">
@@ -146,13 +142,13 @@ require_once '../../includes/header.php';
 
     <!-- Notas opcionales -->
     <div class="card mb-16">
-        <div class="card-title">📝 Notas del cobro (opcional)</div>
+        <div class="card-title"><i class="fa-solid fa-note-sticky"></i> Notas del cobro (opcional)</div>
         <textarea id="notas-cobro" class="form-control" rows="2" placeholder="Ej: cliente pagó con billete de 50..."></textarea>
     </div>
 
     <!-- Botón confirmar -->
     <button class="btn btn-exito btn-full btn-lg" id="btn-confirmar-cobro" onclick="confirmarCobro()">
-        ✅ Confirmar cobro
+        <i class="fa-solid fa-circle-check"></i> Confirmar cobro
     </button>
 
 </div>
@@ -172,7 +168,6 @@ function toggleMetodo(key) {
     } else {
         activos.add(key);
         el.classList.add('activo');
-        // Si solo hay un método activo, prellenar con el total
         if (activos.size === 1) {
             document.getElementById(`monto-${key}`).value = TOTAL_PEDIDO.toFixed(2);
         }
@@ -185,7 +180,6 @@ function calcularDiferencia() {
     activos.forEach(key => {
         asignado += parseFloat(document.getElementById(`monto-${key}`).value || 0);
     });
-
     const diferencia = TOTAL_PEDIDO - asignado;
     document.getElementById('total-asignado').textContent = `S/ ${asignado.toFixed(2)}`;
     document.getElementById('diferencia-val').textContent  = `S/ ${Math.abs(diferencia).toFixed(2)}`;
@@ -193,27 +187,21 @@ function calcularDiferencia() {
     const aviso = document.getElementById('aviso-diferencia');
     if (Math.abs(diferencia) > 0.10) {
         aviso.classList.add('show');
-        aviso.textContent = diferencia > 0
-            ? `⚠️ Faltan S/ ${diferencia.toFixed(2)} por asignar`
-            : `ℹ️ Hay S/ ${Math.abs(diferencia).toFixed(2)} de vuelto/propina`;
+        aviso.innerHTML = diferencia > 0
+            ? `<i class="fa-solid fa-triangle-exclamation"></i> Faltan S/ ${diferencia.toFixed(2)} por asignar`
+            : `<i class="fa-solid fa-circle-info"></i> Hay S/ ${Math.abs(diferencia).toFixed(2)} de vuelto/propina`;
     } else {
         aviso.classList.remove('show');
     }
 }
 
 async function confirmarCobro() {
-    if (activos.size === 0) {
-        Toast.advertencia('Selecciona al menos un método de pago');
-        return;
-    }
+    if (activos.size === 0) { Toast.advertencia('Selecciona al menos un método de pago'); return; }
 
     const pagos = [];
     for (const key of activos) {
         const monto = parseFloat(document.getElementById(`monto-${key}`).value || 0);
-        if (monto <= 0) {
-            Toast.advertencia(`Ingresa el monto para: ${key}`);
-            return;
-        }
+        if (monto <= 0) { Toast.advertencia(`Ingresa el monto para: ${key}`); return; }
         const pago = { metodo: key, monto };
         const refEl = document.getElementById(`ref-${key}`);
         if (refEl) pago.referencia = refEl.value.trim();
@@ -227,31 +215,28 @@ async function confirmarCobro() {
     }
 
     const btn = document.getElementById('btn-confirmar-cobro');
-    btn.disabled = true; btn.textContent = '⏳ Procesando...';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
 
     try {
         const res  = await fetch(BASE_URL + '/api/cobrar_pedido.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
-            body: JSON.stringify({
-                pedido_id: PEDIDO_ID,
-                pagos,
-                notas: document.getElementById('notas-cobro').value,
-            })
+            body: JSON.stringify({ pedido_id: PEDIDO_ID, pagos, notas: document.getElementById('notas-cobro').value })
         });
         const json = await res.json();
         if (json.success) {
-            Toast.exito('✅ ¡Cobro registrado exitosamente!');
+            Toast.exito('¡Cobro registrado exitosamente!');
             setTimeout(() => { window.location.href = BASE_URL + '/roles/atencion/dashboard.php'; }, 1200);
         } else {
             Toast.error(json.message);
             btn.disabled = false;
-            btn.textContent = '✅ Confirmar cobro';
+            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar cobro';
         }
     } catch(e) {
         Toast.error('Error de conexión');
         btn.disabled = false;
-        btn.textContent = '✅ Confirmar cobro';
+        btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar cobro';
     }
 }
 </script>

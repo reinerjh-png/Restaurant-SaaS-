@@ -9,7 +9,6 @@ requireRole(['superadmin']);
 
 $db = getDB();
 
-// Métricas globales
 $stRest = $db->query("SELECT COUNT(*) FROM restaurantes WHERE activo = 1");
 $totalRestaurantes = $stRest->fetchColumn();
 
@@ -24,7 +23,6 @@ $ventasHoy = $stVentas->fetch();
 $stActivos = $db->query("SELECT COUNT(*) FROM pedidos WHERE estado = 'activo'");
 $pedidosActivos = $stActivos->fetchColumn();
 
-// Restaurantes con métricas
 $stRestList = $db->query("
     SELECT r.id, r.nombre, r.activo,
            COUNT(DISTINCT u.id)  AS usuarios,
@@ -40,7 +38,6 @@ $stRestList = $db->query("
 ");
 $restaurantes = $stRestList->fetchAll();
 
-// Últimos logs de acceso
 $stLogs = $db->query("
     SELECT la.accion, la.ip, la.created_at, u.nombre, u.rol
     FROM logs_acceso la
@@ -58,17 +55,18 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php" class="active"><span class="menu-icon">🌐</span> Dashboard Global</a></li>
-            <li><a href="restaurantes.php"><span class="menu-icon">🏪</span> Restaurantes</a></li>
+            <li><a href="dashboard.php" class="active"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
+            <li><a href="restaurantes.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
         </ul>
-        <div style="padding:20px 16px;border-top:1px solid var(--borde);margin-top:20px;">
-            <div style="font-size:.73rem;font-weight:700;color:var(--texto-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Acceso Admin</div>
+        <div style="padding:16px 20px;border-top:1px solid var(--border);margin-top:auto;">
+            <div style="font-size:.71rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Acceso rápido</div>
             <?php foreach ($restaurantes as $r): ?>
             <a href="<?= BASE_URL ?>/roles/admin/dashboard.php?set_rest_id=<?= $r['id'] ?>"
-               style="display:block;font-size:.8rem;padding:6px 8px;border-radius:6px;color:var(--texto);margin-bottom:4px;transition:.15s;"
-               onmouseover="this.style.background='var(--fondo)'"
+               style="display:flex;align-items:center;gap:8px;font-size:.8rem;padding:7px 8px;border-radius:var(--radius-sm);color:var(--text-secondary);margin-bottom:2px;transition:.15s;"
+               onmouseover="this.style.background='var(--bg)'"
                onmouseout="this.style.background='transparent'">
-                🏪 <?= htmlspecialchars($r['nombre']) ?>
+               <i class="fa-solid fa-store" style="font-size:.75rem;flex-shrink:0;"></i>
+               <?= htmlspecialchars($r['nombre']) ?>
             </a>
             <?php endforeach; ?>
         </div>
@@ -80,33 +78,33 @@ require_once '../../includes/header.php';
             <!-- Encabezado -->
             <div class="d-flex align-center justify-between mb-24">
                 <div>
-                    <h1>🌐 Panel Superadmin</h1>
+                    <h1><i class="fa-solid fa-globe" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Panel Superadmin</h1>
                     <p>Vista global del sistema · <?= date('d/m/Y H:i') ?></p>
                 </div>
-                <div style="background:linear-gradient(135deg,#8E44AD,#6C3483);color:#fff;padding:8px 16px;border-radius:99px;font-size:.8rem;font-weight:700;">
-                    🔮 R.DEV · Desarrollador
+                <div style="background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;padding:8px 16px;border-radius:999px;font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:6px;">
+                    <i class="fa-solid fa-code"></i> R.DEV · Desarrollador
                 </div>
             </div>
 
             <!-- Métricas globales -->
             <div class="stats-grid mb-24">
                 <div class="stat-card rojo">
-                    <div class="stat-icon">🏪</div>
+                    <div class="stat-icon"><i class="fa-solid fa-store"></i></div>
                     <div class="stat-valor"><?= $totalRestaurantes ?></div>
                     <div class="stat-label">Restaurantes activos</div>
                 </div>
                 <div class="stat-card verde">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
                     <div class="stat-valor"><?= $totalUsuarios ?></div>
                     <div class="stat-label">Usuarios totales</div>
                 </div>
                 <div class="stat-card naranja">
-                    <div class="stat-icon">💰</div>
+                    <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div class="stat-valor">S/ <?= number_format($ventasHoy['total'], 2) ?></div>
                     <div class="stat-label">Ventas globales hoy</div>
                 </div>
                 <div class="stat-card dorado">
-                    <div class="stat-icon">⏳</div>
+                    <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
                     <div class="stat-valor"><?= $pedidosActivos ?></div>
                     <div class="stat-label">Pedidos activos ahora</div>
                 </div>
@@ -116,8 +114,8 @@ require_once '../../includes/header.php';
                 <!-- Tabla de restaurantes -->
                 <div class="card">
                     <div class="card-title d-flex align-center justify-between">
-                        <span>🏪 Restaurantes</span>
-                        <a href="restaurantes.php" class="btn btn-ghost btn-sm">Ver todos →</a>
+                        <span><i class="fa-solid fa-store"></i> Restaurantes</span>
+                        <a href="restaurantes.php" class="btn btn-ghost btn-sm">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <div class="table-wrap">
                         <table>
@@ -132,8 +130,9 @@ require_once '../../includes/header.php';
                             <tbody>
                                 <?php foreach ($restaurantes as $r): ?>
                                 <tr>
-                                    <td><strong><?= htmlspecialchars($r['nombre']) ?></strong><br>
-                                        <span style="font-size:.72rem;color:var(--texto-light);"><?= $r['usuarios'] ?> usuarios</span>
+                                    <td>
+                                        <strong><?= htmlspecialchars($r['nombre']) ?></strong><br>
+                                        <span style="font-size:.72rem;color:var(--text-secondary);"><?= $r['usuarios'] ?> usuarios</span>
                                     </td>
                                     <td><?= $r['mesas'] ?></td>
                                     <td>S/ <?= number_format($r['ventas_hoy'],2) ?></td>
@@ -147,22 +146,25 @@ require_once '../../includes/header.php';
 
                 <!-- Logs de acceso -->
                 <div class="card">
-                    <div class="card-title">🔍 Actividad reciente</div>
+                    <div class="card-title"><i class="fa-solid fa-magnifying-glass"></i> Actividad reciente</div>
                     <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
                         <?php foreach ($logs as $log): ?>
-                        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gris-claro);font-size:.82rem;">
-                            <span style="font-size:1rem;"><?= $log['accion']==='login'?'🟢':'🔴' ?></span>
+                        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.82rem;">
+                            <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:<?= $log['accion']==='login'?'var(--success)':'var(--danger)' ?>;"></span>
                             <div style="flex:1;">
                                 <div style="font-weight:600;"><?= htmlspecialchars($log['nombre'] ?? 'Desconocido') ?></div>
-                                <div style="color:var(--texto-light);font-size:.72rem;"><?= ucfirst($log['accion']) ?> · <?= $log['ip'] ?></div>
+                                <div style="color:var(--text-muted);font-size:.72rem;"><?= ucfirst($log['accion']) ?> · <?= $log['ip'] ?></div>
                             </div>
-                            <div style="color:var(--texto-light);font-size:.72rem;white-space:nowrap;">
+                            <div style="color:var(--text-muted);font-size:.72rem;white-space:nowrap;">
                                 <?= date('d/m H:i', strtotime($log['created_at'])) ?>
                             </div>
                         </div>
                         <?php endforeach; ?>
                         <?php if (!$logs): ?>
-                        <div class="empty-state" style="padding:20px 0;"><div class="icon">🔍</div><p>Sin actividad registrada</p></div>
+                        <div class="empty-state" style="padding:20px 0;">
+                            <div class="icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                            <p>Sin actividad registrada</p>
+                        </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -170,22 +172,22 @@ require_once '../../includes/header.php';
 
             <!-- Info del sistema -->
             <div class="card">
-                <div class="card-title">⚙️ Información del Sistema</div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+                <div class="card-title"><i class="fa-solid fa-circle-info"></i> Información del Sistema</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">
                     <?php
                     $infos = [
-                        ['PHP Version',     PHP_VERSION,                     '🐘'],
-                        ['MySQL',           'PDO MySQL',                      '🗃️'],
-                        ['Servidor',        $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown', '🖥️'],
-                        ['Zona horaria',    date_default_timezone_get(),      '🕐'],
-                        ['Versión SaaS',    'v1.0.0',                         '🚀'],
-                        ['Desarrollador',   'Reiner Jiménez · R.DEV',         '👨‍💻'],
+                        ['fa-brands fa-php',    'PHP Version',   PHP_VERSION],
+                        ['fa-solid fa-database','MySQL',         'PDO MySQL'],
+                        ['fa-solid fa-server',  'Servidor',      $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown'],
+                        ['fa-solid fa-clock',   'Zona horaria',  date_default_timezone_get()],
+                        ['fa-solid fa-rocket',  'Versión SaaS',  'v1.0.0'],
+                        ['fa-solid fa-code',    'Desarrollador', 'Reiner Jiménez · R.DEV'],
                     ];
-                    foreach ($infos as [$label,$valor,$icon]): ?>
-                    <div style="background:var(--fondo);border-radius:8px;padding:12px;border:1px solid var(--borde);">
-                        <div style="font-size:1.2rem;margin-bottom:4px;"><?= $icon ?></div>
-                        <div style="font-size:.7rem;color:var(--texto-light);font-weight:600;text-transform:uppercase;letter-spacing:.5px;"><?= $label ?></div>
-                        <div style="font-size:.85rem;font-weight:700;color:var(--texto);margin-top:2px;"><?= htmlspecialchars($valor) ?></div>
+                    foreach ($infos as [$icon,$label,$valor]): ?>
+                    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:14px;border:1px solid var(--border);">
+                        <div style="font-size:1.2rem;margin-bottom:6px;color:var(--primary);"><i class="<?= $icon ?>"></i></div>
+                        <div style="font-size:.7rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;"><?= $label ?></div>
+                        <div style="font-size:.85rem;font-weight:700;color:var(--text-primary);margin-top:3px;"><?= htmlspecialchars($valor) ?></div>
                     </div>
                     <?php endforeach; ?>
                 </div>

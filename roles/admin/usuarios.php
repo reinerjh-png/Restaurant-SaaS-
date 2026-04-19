@@ -27,13 +27,13 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon">📊</span> Dashboard</a></li>
-            <li><a href="mesas.php"><span class="menu-icon">🪑</span> Mesas</a></li>
-            <li><a href="menu_categorias.php"><span class="menu-icon">📂</span> Categorías</a></li>
-            <li><a href="menu_productos.php"><span class="menu-icon">🍽️</span> Productos</a></li>
-            <li><a href="usuarios.php" class="active"><span class="menu-icon">👥</span> Usuarios</a></li>
-            <li><a href="reportes.php"><span class="menu-icon">📈</span> Reportes</a></li>
-            <li><a href="historial.php"><span class="menu-icon">🗂️</span> Historial</a></li>
+            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-chart-bar"></i></span> Dashboard</a></li>
+            <li><a href="mesas.php"><span class="menu-icon"><i class="fa-solid fa-chair"></i></span> Mesas</a></li>
+            <li><a href="menu_categorias.php"><span class="menu-icon"><i class="fa-solid fa-folder"></i></span> Categorías</a></li>
+            <li><a href="menu_productos.php"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
+            <li><a href="usuarios.php" class="active"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
+            <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
+            <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
         </ul>
     </aside>
 
@@ -42,13 +42,16 @@ require_once '../../includes/header.php';
 
             <div class="d-flex align-center justify-between mb-24">
                 <div>
-                    <h1>👥 Usuarios del Sistema</h1>
+                    <h1><i class="fa-solid fa-users" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Usuarios del Sistema</h1>
                     <p><?= count($usuarios) ?> usuarios registrados</p>
                 </div>
-                <button class="btn btn-primario" onclick="nuevoUsuario()">➕ Nuevo Usuario</button>
+                <button class="btn btn-primario" onclick="nuevoUsuario()" id="btn-nuevo-usr">
+                    <i class="fa-solid fa-plus"></i> Nuevo Usuario
+                </button>
             </div>
 
             <div class="card">
+                <?php if ($usuarios): ?>
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -65,34 +68,52 @@ require_once '../../includes/header.php';
                             <?php foreach ($usuarios as $u): ?>
                             <tr>
                                 <td>
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <div class="avatar" style="background:var(--rojo);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;">
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <div class="user-avatar avatar-<?= $u['rol'] ?>">
                                             <?= strtoupper(substr($u['nombre'],0,1)) ?>
                                         </div>
-                                        <?= htmlspecialchars($u['nombre']) ?>
+                                        <span style="font-weight:600;"><?= htmlspecialchars($u['nombre']) ?></span>
                                     </div>
                                 </td>
-                                <td><?= htmlspecialchars($u['email']) ?></td>
+                                <td style="color:var(--text-secondary);font-size:.875rem;"><?= htmlspecialchars($u['email']) ?></td>
                                 <td>
-                                    <span class="badge <?= ['admin'=>'badge-naranja','atencion'=>'badge-azul','cocina'=>'badge-verde'][$u['rol']] ?? 'badge-gris' ?>">
+                                    <span class="badge <?= ['admin'=>'badge-azul','atencion'=>'badge-verde','cocina'=>'badge-naranja'][$u['rol']] ?? 'badge-gris' ?>">
                                         <?= ucfirst($u['rol']) ?>
                                     </span>
                                 </td>
-                                <td><span class="badge <?= $u['activo'] ? 'badge-verde' : 'badge-gris' ?>"><?= $u['activo'] ? 'Activo' : 'Inactivo' ?></span></td>
-                                <td><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
                                 <td>
-                                    <button class="btn btn-ghost btn-sm"
-                                        onclick='editarUsuario(<?= json_encode($u) ?>)'>✏️ Editar</button>
-                                    <?php if ($u['id'] != $_SESSION['usuario_id']): ?>
-                                    <button class="btn btn-peligro btn-sm"
-                                        onclick="eliminarUsuario(<?= $u['id'] ?>, '<?= htmlspecialchars($u['nombre'], ENT_QUOTES) ?>')">🗑️</button>
-                                    <?php endif; ?>
+                                    <span class="badge <?= $u['activo'] ? 'badge-verde' : 'badge-gris' ?>">
+                                        <?= $u['activo'] ? 'Activo' : 'Inactivo' ?>
+                                    </span>
+                                </td>
+                                <td style="color:var(--text-secondary);font-size:.82rem;"><?= date('d/m/Y', strtotime($u['created_at'])) ?></td>
+                                <td>
+                                    <div style="display:flex;gap:6px;">
+                                        <button class="btn btn-ghost btn-sm" title="Editar"
+                                            onclick='editarUsuario(<?= json_encode($u) ?>)'>
+                                            <i class="fa-solid fa-pen"></i>
+                                            <span class="btn-label-desktop"> Editar</span>
+                                        </button>
+                                        <?php if ($u['id'] != $_SESSION['usuario_id']): ?>
+                                        <button class="btn btn-peligro btn-sm" title="Eliminar"
+                                            onclick="eliminarUsuario(<?= $u['id'] ?>, '<?= htmlspecialchars($u['nombre'], ENT_QUOTES) ?>')">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+                <?php else: ?>
+                <div class="empty-state">
+                    <div class="icon"><i class="fa-solid fa-users"></i></div>
+                    <h3>Sin usuarios registrados</h3>
+                    <p>Agrega el primer usuario del sistema</p>
+                </div>
+                <?php endif; ?>
             </div>
 
         </div>
@@ -103,8 +124,10 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-usuario">
     <div class="modal">
         <div class="modal-header">
-            <div class="modal-title" id="modal-usr-titulo">➕ Nuevo Usuario</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-usuario')">✕</button>
+            <div class="modal-title" id="modal-usr-titulo">
+                <i class="fa-solid fa-user-plus"></i> Nuevo Usuario
+            </div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-usuario')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body">
             <form id="form-usr" autocomplete="off">
@@ -120,28 +143,30 @@ require_once '../../includes/header.php';
                 <div class="form-group">
                     <label class="form-label">Rol</label>
                     <select id="usr-rol" class="form-control">
-                        <option value="atencion">👩‍💼 Atención al cliente</option>
-                        <option value="cocina">👨‍🍳 Cocina</option>
-                        <option value="admin">⚙️ Administrador</option>
+                        <option value="atencion">Atención al cliente</option>
+                        <option value="cocina">Cocina</option>
+                        <option value="admin">Administrador</option>
                     </select>
                 </div>
                 <div class="form-group" id="grp-password">
                     <label class="form-label"><span id="lbl-pass">Contraseña</span></label>
                     <input type="password" id="usr-password" class="form-control" placeholder="Mín. 6 caracteres" autocomplete="new-password">
-                    <div class="form-error" id="lbl-pass-edit" style="display:none;color:var(--texto-light);">Dejar en blanco para mantener la contraseña actual</div>
+                    <div class="form-error" id="lbl-pass-edit" style="display:none;">Dejar en blanco para mantener la contraseña actual</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Estado</label>
                     <select id="usr-activo" class="form-control">
-                        <option value="1">✅ Activo</option>
-                        <option value="0">❌ Inactivo</option>
+                        <option value="1">Activo</option>
+                        <option value="0">Inactivo</option>
                     </select>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" onclick="Modal.cerrar('modal-usuario')">Cancelar</button>
-            <button class="btn btn-primario btn-full" onclick="guardarUsuario()" id="btn-guardar-usr">💾 Guardar</button>
+            <button class="btn btn-primario btn-full" onclick="guardarUsuario()" id="btn-guardar-usr">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar
+            </button>
         </div>
     </div>
 </div>
@@ -151,7 +176,7 @@ let modoEdicionUsr = false;
 
 function nuevoUsuario() {
     modoEdicionUsr = false;
-    document.getElementById('modal-usr-titulo').textContent = '➕ Nuevo Usuario';
+    document.getElementById('modal-usr-titulo').innerHTML = '<i class="fa-solid fa-user-plus"></i> Nuevo Usuario';
     document.getElementById('form-usr').reset();
     document.getElementById('usr-id').value = '';
     document.getElementById('lbl-pass-edit').style.display = 'none';
@@ -160,7 +185,7 @@ function nuevoUsuario() {
 
 function editarUsuario(usr) {
     modoEdicionUsr = true;
-    document.getElementById('modal-usr-titulo').textContent = '✏️ Editar: ' + usr.nombre;
+    document.getElementById('modal-usr-titulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar: ' + usr.nombre;
     document.getElementById('usr-id').value     = usr.id;
     document.getElementById('usr-nombre').value = usr.nombre;
     document.getElementById('usr-email').value  = usr.email;

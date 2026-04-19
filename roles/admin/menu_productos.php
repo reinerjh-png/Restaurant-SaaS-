@@ -1,7 +1,6 @@
 <?php
 /**
  * roles/admin/menu_productos.php — Gestión de productos del menú
- * Incluye: crear/editar/eliminar productos con opciones secuenciales
  * Sistema SaaS Restaurante | R.DEV
  */
 session_start();
@@ -11,12 +10,10 @@ requireRole(['admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
-// Categorías para el filtro y el formulario
 $stCats = $db->prepare("SELECT * FROM categorias WHERE restaurante_id = ? AND activo = 1 ORDER BY orden");
 $stCats->execute([$restauranteId]);
 $categorias = $stCats->fetchAll();
 
-// Productos con categoría
 $stProds = $db->prepare("
     SELECT p.*, c.nombre AS categoria_nombre, c.icono AS categoria_icono
     FROM productos p
@@ -35,13 +32,13 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon">📊</span> Dashboard</a></li>
-            <li><a href="mesas.php"><span class="menu-icon">🪑</span> Mesas</a></li>
-            <li><a href="menu_categorias.php"><span class="menu-icon">📂</span> Categorías</a></li>
-            <li><a href="menu_productos.php" class="active"><span class="menu-icon">🍽️</span> Productos</a></li>
-            <li><a href="usuarios.php"><span class="menu-icon">👥</span> Usuarios</a></li>
-            <li><a href="reportes.php"><span class="menu-icon">📈</span> Reportes</a></li>
-            <li><a href="historial.php"><span class="menu-icon">🗂️</span> Historial</a></li>
+            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-chart-bar"></i></span> Dashboard</a></li>
+            <li><a href="mesas.php"><span class="menu-icon"><i class="fa-solid fa-chair"></i></span> Mesas</a></li>
+            <li><a href="menu_categorias.php"><span class="menu-icon"><i class="fa-solid fa-folder"></i></span> Categorías</a></li>
+            <li><a href="menu_productos.php" class="active"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
+            <li><a href="usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
+            <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
+            <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
         </ul>
     </aside>
 
@@ -50,15 +47,23 @@ require_once '../../includes/header.php';
 
             <div class="d-flex align-center justify-between mb-16">
                 <div>
-                    <h1>🍽️ Productos del Menú</h1>
+                    <h1><i class="fa-solid fa-utensils" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Productos del Menú</h1>
                     <p><?= count($productos) ?> productos registrados</p>
                 </div>
-                <button class="btn btn-primario" onclick="nuevoProducto()">➕ Nuevo Producto</button>
+                <button class="btn btn-primario" onclick="nuevoProducto()">
+                    <i class="fa-solid fa-plus"></i> Nuevo Producto
+                </button>
             </div>
 
             <!-- Buscador -->
             <div class="mb-16">
-                <input type="text" id="buscador-admin" class="form-control" placeholder="🔍 Buscar producto por nombre..." oninput="buscarAdmin(this.value)" style="width:100%; border-radius: 99px; padding-left: 16px;">
+                <div class="input-icon-wrap">
+                    <span class="input-icon-left"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="buscador-admin" class="form-control"
+                        placeholder="Buscar producto por nombre…"
+                        oninput="buscarAdmin(this.value)"
+                        style="border-radius:999px;">
+                </div>
             </div>
 
             <!-- Filtro por categoría -->
@@ -74,25 +79,36 @@ require_once '../../includes/header.php';
             <!-- Grid de productos -->
             <div id="productos-grid" class="productos-grid">
                 <?php foreach ($productos as $p): ?>
-                <div class="producto-card admin-prod" data-cat="<?= $p['categoria_id'] ?>" data-id="<?= $p['id'] ?>" data-nombre="<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>">
+                <div class="producto-card admin-prod"
+                    data-cat="<?= $p['categoria_id'] ?>"
+                    data-id="<?= $p['id'] ?>"
+                    data-nombre="<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>">
                     <div class="producto-thumb" style="<?= !$p['activo'] ? 'filter:grayscale(1);opacity:.5;' : '' ?>">
                         <?= htmlspecialchars($p['categoria_icono']) ?>
                     </div>
                     <div class="producto-info">
                         <div class="producto-nombre"><?= htmlspecialchars($p['nombre']) ?></div>
-                        <div style="font-size:.7rem;color:var(--texto-light);margin:2px 0;"><?= htmlspecialchars($p['categoria_nombre']) ?></div>
+                        <div style="font-size:.7rem;color:var(--text-secondary);margin:2px 0;"><?= htmlspecialchars($p['categoria_nombre']) ?></div>
                         <div class="producto-precio">S/ <?= number_format($p['precio'], 2) ?></div>
                         <?php if ($p['tiene_opciones']): ?>
-                        <div style="font-size:.68rem;color:var(--naranja);font-weight:600;margin-top:3px;">⚙️ Con opciones</div>
+                        <div style="font-size:.68rem;color:var(--warning);font-weight:600;margin-top:3px;">
+                            <i class="fa-solid fa-sliders"></i> Con opciones
+                        </div>
                         <?php endif; ?>
                         <?php if (!$p['activo']): ?>
-                        <div style="font-size:.68rem;color:var(--gris);font-weight:600;margin-top:3px;">❌ Inactivo</div>
+                        <div style="font-size:.68rem;color:var(--text-muted);font-weight:600;margin-top:3px;">
+                            <i class="fa-solid fa-eye-slash"></i> Inactivo
+                        </div>
                         <?php endif; ?>
                         <div style="display:flex;gap:5px;margin-top:8px;">
                             <button class="btn btn-ghost btn-sm" style="flex:1;font-size:.73rem;"
-                                onclick='editarProducto(<?= json_encode($p) ?>)'>✏️</button>
+                                onclick='editarProducto(<?= json_encode($p) ?>)'>
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
                             <button class="btn btn-peligro btn-sm" style="flex:1;font-size:.73rem;"
-                                onclick="eliminarProducto(<?= $p['id'] ?>, '<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>')">🗑️</button>
+                                onclick="eliminarProducto(<?= $p['id'] ?>, '<?= htmlspecialchars($p['nombre'], ENT_QUOTES) ?>')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -101,7 +117,7 @@ require_once '../../includes/header.php';
 
             <?php if (!$productos): ?>
             <div class="empty-state">
-                <div class="icon">🍽️</div>
+                <div class="icon"><i class="fa-solid fa-utensils"></i></div>
                 <h3>Sin productos registrados</h3>
                 <p>Agrega el primer plato del menú</p>
             </div>
@@ -115,13 +131,12 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-producto">
     <div class="modal" style="max-width:550px;">
         <div class="modal-header">
-            <div class="modal-title" id="modal-prod-titulo">➕ Nuevo Producto</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-producto')">✕</button>
+            <div class="modal-title" id="modal-prod-titulo"><i class="fa-solid fa-plus"></i> Nuevo Producto</div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-producto')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body">
             <form id="form-prod">
                 <input type="hidden" id="prod-id">
-
                 <div class="form-group">
                     <label class="form-label">Categoría</label>
                     <select id="prod-categoria" class="form-control" required>
@@ -130,17 +145,14 @@ require_once '../../includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Nombre del producto</label>
                     <input type="text" id="prod-nombre" class="form-control" placeholder="Ej: Ceviche Clásico" required maxlength="120">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Descripción (opcional)</label>
                     <textarea id="prod-descripcion" class="form-control" placeholder="Ingredientes o descripción breve..." rows="2"></textarea>
                 </div>
-
                 <div class="form-row form-row-2">
                     <div class="form-group">
                         <label class="form-label">Precio (S/)</label>
@@ -149,24 +161,27 @@ require_once '../../includes/header.php';
                     <div class="form-group">
                         <label class="form-label">Estado</label>
                         <select id="prod-activo" class="form-control">
-                            <option value="1">✅ Activo</option>
-                            <option value="0">❌ Inactivo</option>
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
                         <input type="checkbox" id="prod-opciones" style="width:18px;height:18px;">
-                        <span class="form-label" style="margin:0;">⚙️ Este plato tiene opciones especiales (ej: tipo de arroz, acompañamientos)</span>
+                        <span class="form-label" style="margin:0;">
+                            <i class="fa-solid fa-sliders" style="color:var(--warning);"></i>
+                            Tiene opciones personalizables
+                        </span>
                     </label>
                 </div>
-
-                <!-- Sección de opciones (solo si tiene_opciones = 1) -->
-                <div id="seccion-opciones" style="display:none;background:var(--fondo);border-radius:var(--radio-sm);padding:14px;border:1px solid var(--borde);">
+                <!-- Grupos de opciones -->
+                <div id="seccion-opciones" style="display:none;background:var(--bg-secondary);border-radius:var(--radius-md);padding:14px;border:1px solid var(--border);">
                     <div class="d-flex align-center justify-between mb-8">
                         <div style="font-weight:700;font-size:.88rem;">Grupos de Opciones</div>
-                        <button type="button" class="btn btn-naranja btn-sm" onclick="agregarGrupo()">+ Agregar Grupo</button>
+                        <button type="button" class="btn btn-naranja btn-sm" onclick="agregarGrupo()">
+                            <i class="fa-solid fa-plus"></i> Agregar Grupo
+                        </button>
                     </div>
                     <div id="grupos-container"></div>
                 </div>
@@ -174,7 +189,9 @@ require_once '../../includes/header.php';
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" onclick="Modal.cerrar('modal-producto')">Cancelar</button>
-            <button class="btn btn-primario btn-full" onclick="guardarProducto()" id="btn-guardar-prod">💾 Guardar Producto</button>
+            <button class="btn btn-primario btn-full" onclick="guardarProducto()" id="btn-guardar-prod">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
+            </button>
         </div>
     </div>
 </div>
@@ -190,7 +207,7 @@ document.getElementById('prod-opciones').addEventListener('change', function() {
 function nuevoProducto() {
     modoEdicionProd = false;
     opcGrupos = [];
-    document.getElementById('modal-prod-titulo').textContent = '➕ Nuevo Producto';
+    document.getElementById('modal-prod-titulo').innerHTML = '<i class="fa-solid fa-plus"></i> Nuevo Producto';
     document.getElementById('form-prod').reset();
     document.getElementById('prod-id').value = '';
     document.getElementById('seccion-opciones').style.display = 'none';
@@ -201,7 +218,7 @@ function nuevoProducto() {
 function editarProducto(prod) {
     modoEdicionProd = true;
     opcGrupos = [];
-    document.getElementById('modal-prod-titulo').textContent = '✏️ Editar: ' + prod.nombre;
+    document.getElementById('modal-prod-titulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar: ' + prod.nombre;
     document.getElementById('prod-id').value          = prod.id;
     document.getElementById('prod-categoria').value   = prod.categoria_id;
     document.getElementById('prod-nombre').value      = prod.nombre;
@@ -210,7 +227,6 @@ function editarProducto(prod) {
     document.getElementById('prod-activo').value      = prod.activo;
     document.getElementById('prod-opciones').checked  = prod.tiene_opciones == 1;
     document.getElementById('seccion-opciones').style.display = prod.tiene_opciones == 1 ? 'block' : 'none';
-
     if (prod.tiene_opciones == 1) cargarGruposExistentes(prod.id);
     Modal.abrir('modal-producto');
 }
@@ -239,16 +255,21 @@ function renderizarGrupo(idx, grupo) {
     const cont = document.getElementById('grupos-container');
     const div  = document.createElement('div');
     div.id = `grupo-${idx}`;
-    div.style.cssText = 'background:#fff;border:1px solid var(--borde);border-radius:8px;padding:12px;margin-bottom:10px;';
+    div.style.cssText = 'background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:10px;';
     div.innerHTML = `
         <div class="d-flex align-center justify-between mb-8">
-            <input type="text" placeholder="Pregunta (ej: ¿Con arroz o fideos?)" class="form-control"
-                style="flex:1;margin-right:8px;height:36px;font-size:.82rem;"
+            <input type="text" placeholder="Ej: ¿Con arroz o fideos?" class="form-control"
+                style="flex:1;margin-right:8px;min-height:38px;font-size:.875rem;"
                 value="${grupo.nombre}" oninput="opcGrupos[${idx}].nombre = this.value">
-            <button type="button" onclick="eliminarGrupo(${idx})" style="background:var(--peligro);color:#fff;border:none;border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:.85rem;">✕</button>
+            <button type="button" onclick="eliminarGrupo(${idx})"
+                style="background:var(--danger);color:#fff;border:none;border-radius:var(--radius-sm);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <div id="valores-${idx}" style="display:flex;flex-direction:column;gap:6px;"></div>
-        <button type="button" class="btn btn-ghost btn-sm mt-8" onclick="agregarValor(${idx})" style="font-size:.75rem;">+ Añadir opción</button>
+        <button type="button" class="btn btn-ghost btn-sm mt-8" onclick="agregarValor(${idx})" style="font-size:.78rem;">
+            <i class="fa-solid fa-plus"></i> Añadir opción
+        </button>
     `;
     cont.appendChild(div);
     if (grupo.valores.length === 0) grupo.valores = [''];
@@ -268,11 +289,13 @@ function agregarValorRender(grupoIdx, valIdx, valor) {
     row.style.cssText = 'display:flex;gap:8px;align-items:center;';
     row.innerHTML = `
         <input type="text" placeholder="Ej: Con Fideos" class="form-control"
-            style="flex:1;height:34px;font-size:.82rem;"
+            style="flex:1;min-height:38px;font-size:.875rem;"
             value="${valor}"
             oninput="opcGrupos[${grupoIdx}].valores[${valIdx}] = this.value">
         <button type="button" onclick="this.parentElement.remove(); opcGrupos[${grupoIdx}].valores.splice(${valIdx},1);"
-            style="background:none;border:none;color:var(--gris);font-size:1rem;cursor:pointer;">✕</button>
+            style="background:none;border:none;color:var(--danger);font-size:.875rem;cursor:pointer;padding:4px;min-height:38px;display:flex;align-items:center;">
+            <i class="fa-solid fa-minus-circle"></i>
+        </button>
     `;
     cont.appendChild(row);
 }
@@ -288,15 +311,14 @@ async function guardarProducto() {
     btn.disabled = true;
 
     const tieneOpciones = document.getElementById('prod-opciones').checked;
-
     const datos = {
-        accion:       modoEdicionProd ? 'editar' : 'crear',
-        id:           document.getElementById('prod-id').value,
-        categoria_id: document.getElementById('prod-categoria').value,
-        nombre:       document.getElementById('prod-nombre').value,
-        descripcion:  document.getElementById('prod-descripcion').value,
-        precio:       document.getElementById('prod-precio').value,
-        activo:       document.getElementById('prod-activo').value,
+        accion:        modoEdicionProd ? 'editar' : 'crear',
+        id:            document.getElementById('prod-id').value,
+        categoria_id:  document.getElementById('prod-categoria').value,
+        nombre:        document.getElementById('prod-nombre').value,
+        descripcion:   document.getElementById('prod-descripcion').value,
+        precio:        document.getElementById('prod-precio').value,
+        activo:        document.getElementById('prod-activo').value,
         tiene_opciones: tieneOpciones ? 1 : 0,
         grupos: tieneOpciones ? opcGrupos.filter(g => g.nombre.trim()) : [],
     };
@@ -332,17 +354,14 @@ function eliminarProducto(id, nombre) {
     });
 }
 
-let catAdmin = '';
-let txtAdmin = '';
+let catAdmin = '', txtAdmin = '';
 
 function aplicarFiltrosAdmin() {
     const texto = txtAdmin.toLowerCase();
     document.querySelectorAll('.admin-prod').forEach(p => {
         const nombre = (p.dataset.nombre || '').toLowerCase();
         const cat = p.dataset.cat;
-        const pasaCat = (!catAdmin || cat == catAdmin);
-        const pasaTxt = (!texto || nombre.includes(texto));
-        p.style.display = (pasaCat && pasaTxt) ? '' : 'none';
+        p.style.display = ((!catAdmin || cat == catAdmin) && (!texto || nombre.includes(texto))) ? '' : 'none';
     });
 }
 
@@ -353,10 +372,7 @@ function filtrarCategoria(catId, btn) {
     aplicarFiltrosAdmin();
 }
 
-function buscarAdmin(texto) {
-    txtAdmin = texto;
-    aplicarFiltrosAdmin();
-}
+function buscarAdmin(texto) { txtAdmin = texto; aplicarFiltrosAdmin(); }
 </script>
 
 <?php require_once '../../includes/footer.php'; ?>

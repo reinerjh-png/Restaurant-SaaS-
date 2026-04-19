@@ -18,10 +18,15 @@ const Toast = {
     },
 
     show(mensaje, tipo = 'info', duracion = 3500) {
-        const iconos = { exito: '✅', error: '❌', advertencia: '⚠️', info: 'ℹ️' };
+        const iconMap = {
+            exito:      'fa-circle-check',
+            error:      'fa-circle-xmark',
+            advertencia:'fa-triangle-exclamation',
+            info:       'fa-circle-info'
+        };
         const toast = document.createElement('div');
         toast.className = `toast ${tipo}`;
-        toast.innerHTML = `<span>${iconos[tipo] || '🔔'}</span> ${mensaje}`;
+        toast.innerHTML = `<i class="fa-solid ${iconMap[tipo] || 'fa-bell'}"></i> <span>${mensaje}</span>`;
         this.container.appendChild(toast);
         setTimeout(() => {
             toast.classList.add('saliendo');
@@ -68,7 +73,7 @@ const Loading = {
             this.overlay = document.createElement('div');
             this.overlay.id = 'loading-overlay';
             this.overlay.className = 'loading-overlay';
-            this.overlay.innerHTML = '<div class="spinner"></div>';
+            this.overlay.innerHTML = '<div class="spinner"></div><p>Procesando…</p>';
             document.body.appendChild(this.overlay);
         }
     },
@@ -79,7 +84,7 @@ const Loading = {
 /* ── POLLING (tiempo real) ───────────────────────────────────── */
 function iniciarPolling(endpoint, callback, intervalo = 15000) {
     // Ejecutar inmediatamente
-        fetch(endpoint)
+    fetch(endpoint)
         .then(async r => {
             if (!r.ok) throw new Error(`HTTP error ${r.status}`);
             const text = await r.text();
@@ -91,7 +96,7 @@ function iniciarPolling(endpoint, callback, intervalo = 15000) {
             }
         })
         .then(data => { if (data.success) callback(data.data); })
-        .catch(e => { console.warn(e); Toast.error('Error: ' + e.message); });
+        .catch(e => { console.warn(e); });
 
     return setInterval(() => {
         fetch(endpoint)
@@ -105,7 +110,7 @@ function iniciarPolling(endpoint, callback, intervalo = 15000) {
                 }
             })
             .then(data => { if (data.success) callback(data.data); })
-            .catch(e => { console.warn(e); Toast.error('Error: ' + e.message); });
+            .catch(e => { console.warn(e); });
     }, intervalo);
 }
 
@@ -130,12 +135,12 @@ async function mostrarOpcionesSecuenciales(productoId, nombreProducto) {
 
 function abrirModalOpcion(grupo, nombreProducto, paso, total) {
     return new Promise((resolve) => {
-        const overlay = document.getElementById('modal-opciones');
-        const titulo  = document.getElementById('modal-opciones-titulo');
+        const overlay   = document.getElementById('modal-opciones');
+        const titulo    = document.getElementById('modal-opciones-titulo');
         const subtitulo = document.getElementById('modal-opciones-subtitulo');
-        const lista   = document.getElementById('modal-opciones-lista');
-        const btnConf = document.getElementById('modal-opciones-confirmar');
-        const btnCan  = document.getElementById('modal-opciones-cancelar');
+        const lista     = document.getElementById('modal-opciones-lista');
+        const btnConf   = document.getElementById('modal-opciones-confirmar');
+        const btnCan    = document.getElementById('modal-opciones-cancelar');
 
         titulo.textContent    = grupo.nombre;
         subtitulo.textContent = `${nombreProducto} · Paso ${paso} de ${total}`;
@@ -208,13 +213,11 @@ function confirmar(mensaje, callback, onCancel) {
     }
     document.getElementById('modal-confirmar-msg').textContent = mensaje;
 
-    // Botón confirmar
     document.getElementById('modal-confirmar-btn').onclick = () => {
         Modal.cerrar('modal-confirmar');
         callback();
     };
 
-    // Botón cancelar — ejecutar onCancel si se proporcionó
     const btnCan = document.querySelector('#modal-confirmar .btn-ghost');
     if (btnCan) {
         btnCan.onclick = () => {
@@ -242,22 +245,20 @@ document.addEventListener('DOMContentLoaded', () => {
     Loading.init();
     marcarMenuActivo();
 
-    // Inyectar botón hamburguesa y lógica del menú lateral (layout-admin/atencion)
-    const navbar = document.querySelector('.navbar');
+    // Inyectar botón hamburguesa y lógica del menú lateral
+    const navbar  = document.querySelector('.navbar');
     const sidebar = document.querySelector('.sidebar');
     if (navbar && sidebar) {
-        // Inject button inside navbar-brand to group it with the logo
         const brand = navbar.querySelector('.navbar-brand');
         if (brand) {
             const ham = document.createElement('button');
             ham.className = 'btn-hamburguesa';
             ham.id = 'btn-hamburguesa';
             ham.title = 'Menú';
-            ham.innerHTML = '☰';
             ham.setAttribute('aria-label', 'Abrir menú lateral');
+            ham.innerHTML = '<i class="fa-solid fa-bars"></i>';
             brand.insertBefore(ham, brand.firstChild);
 
-            // Overlay para cerrar
             let overlay = document.getElementById('sidebar-overlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -273,6 +274,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const open = (force === undefined) ? !sidebar.classList.contains('abierto') : force;
                 sidebar.classList.toggle('abierto', open);
                 overlay.classList.toggle('activo', open);
+                ham.innerHTML = open
+                    ? '<i class="fa-solid fa-xmark"></i>'
+                    : '<i class="fa-solid fa-bars"></i>';
             }
         }
     }

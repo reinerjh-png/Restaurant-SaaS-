@@ -11,14 +11,10 @@ $restauranteId = $_SESSION['restaurante_id'];
 $pedidoId = (int)($_GET['pedido_id'] ?? 0);
 $mesaId   = (int)($_GET['mesa_id']   ?? 0);
 
-if (!$pedidoId) {
-    header('Location: dashboard.php');
-    exit;
-}
+if (!$pedidoId) { header('Location: dashboard.php'); exit; }
 
 $db = getDB();
 
-// Cargar pedido
 $stPed = $db->prepare("
     SELECT pe.*, m.numero AS mesa_numero
     FROM pedidos pe
@@ -27,22 +23,16 @@ $stPed = $db->prepare("
 ");
 $stPed->execute([$pedidoId, $restauranteId]);
 $pedido = $stPed->fetch();
-if (!$pedido) {
-    header('Location: dashboard.php');
-    exit;
-}
+if (!$pedido) { header('Location: dashboard.php'); exit; }
 
-// Categorías activas
 $stCats = $db->prepare("SELECT * FROM categorias WHERE restaurante_id = ? AND activo = 1 ORDER BY orden");
 $stCats->execute([$restauranteId]);
 $categorias = $stCats->fetchAll();
 
-// Productos activos
 $stProds = $db->prepare("SELECT * FROM productos WHERE restaurante_id = ? AND activo = 1 ORDER BY categoria_id, nombre");
 $stProds->execute([$restauranteId]);
 $productos = $stProds->fetchAll();
 
-// Items actuales del pedido
 $stItems = $db->prepare("
     SELECT pi.*, pr.nombre AS producto_nombre,
            GROUP_CONCAT(ov.valor SEPARATOR ' · ') AS opciones_texto
@@ -60,83 +50,84 @@ $items = $stItems->fetchAll();
 $mesaLabel = $pedido['mesa_numero'] ? 'Mesa '.$pedido['mesa_numero'] : 'Para llevar';
 
 $pageTitle = "Comanda · $mesaLabel";
-$hideLogout = true; // Ocultar botón de salir para evitar accidentes
+$hideLogout = true;
 require_once '../../includes/header.php';
 ?>
 
 <style>
 .comanda-layout { display: grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 60px); position: relative; }
-.panel-pedido { background:#fff; border-left:1px solid var(--borde); display:flex; flex-direction:column; height:calc(100vh - 60px); position:sticky; top:60px; z-index: 100; }
-
-/* ── Barra inferior fija (solo móvil) ── */
-.barra-ver-pedido {
-    display: none;          /* se muestra solo en mobile via @media */
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    z-index: 900;
-    height: 64px;
-    background: linear-gradient(135deg, var(--rojo), var(--rojo-dark));
-    color: #fff;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    cursor: pointer;
-    border: none;
-    font-family: var(--fuente);
-    box-shadow: 0 -2px 16px rgba(0,0,0,0.25);
+.panel-pedido {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+    position: sticky;
+    top: 60px;
+    z-index: 100;
 }
-.barra-ver-pedido .barra-left { display:flex; align-items:center; gap:10px; }
-.barra-ver-pedido .barra-badge {
-    background: rgba(255,255,255,.25);
-    border-radius: 99px;
-    padding: 3px 10px;
-    font-size: .82rem;
-    font-weight: 700;
-}
-.barra-ver-pedido .barra-subtotal { font-size:1rem; font-weight:800; }
-.barra-ver-pedido .barra-cta { font-size:.85rem; font-weight:700; opacity:.9; }
-.panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+.barra-ver-pedido { display: none; }
+.panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 999; }
 .btn-cerrar-panel-movil { display: none; }
 
-@media (max-width: 900px) { 
-    .comanda-layout { grid-template-columns: 1fr; } 
+@media (max-width: 900px) {
+    .comanda-layout { grid-template-columns: 1fr; }
     .panel-pedido {
         position: fixed;
-        top: auto;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        top: auto; bottom: 0; left: 0; right: 0;
         height: 85vh;
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -4px 20px rgba(0,0,0,.12);
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
         transform: translateY(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
         z-index: 1000;
         border-left: none;
     }
     .panel-pedido.abierto { transform: translateY(0); }
     .barra-ver-pedido { display: flex; }
     .panel-overlay.activo { display: block; }
-    .btn-cerrar-panel-movil { display: block; background:rgba(0,0,0,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-weight:700;cursor:pointer; }
-    /* Espacio inferior para que la barra no tape el último producto */
+    .btn-cerrar-panel-movil {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.25);
+        border: none;
+        color: #fff;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
     .menu-scroll-area { padding-bottom: 80px !important; }
 }
 </style>
 
 <div class="comanda-layout">
 
-    <!-- ── Menú ─────────────────────────── -->
+    <!-- Menú -->
     <div class="menu-scroll-area" style="padding:16px;overflow-y:auto;max-height:calc(100vh - 60px);">
         <div class="d-flex align-center justify-between mb-12">
             <div>
-                <h2><?= $pedido['tipo']==='aqui'?'🏠':'🛍️' ?> <?= htmlspecialchars($mesaLabel) ?></h2>
+                <h2>
+                    <i class="fa-solid <?= $pedido['tipo']==='aqui' ? 'fa-house' : 'fa-bag-shopping' ?>"></i>
+                    <?= htmlspecialchars($mesaLabel) ?>
+                </h2>
                 <p>Selecciona productos para añadir al pedido</p>
             </div>
-            <a href="dashboard.php" class="btn btn-ghost btn-sm">← Volver</a>
+            <a href="dashboard.php" class="btn btn-ghost btn-sm">
+                <i class="fa-solid fa-arrow-left"></i> Volver
+            </a>
         </div>
 
         <div class="mb-12">
-            <input type="text" id="buscador-platos" class="form-control" placeholder="🔍 Buscar plato por nombre..." oninput="buscarPlatos(this.value)" style="width:100%; border-radius: 99px; padding-left: 16px;">
+            <div class="input-icon-wrap">
+                <span class="input-icon-left"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="buscador-platos" class="form-control"
+                    placeholder="Buscar plato por nombre…"
+                    oninput="buscarPlatos(this.value)"
+                    style="border-radius:999px;">
+            </div>
         </div>
 
         <!-- Categorías tabs -->
@@ -152,7 +143,10 @@ require_once '../../includes/header.php';
         <!-- Productos -->
         <div class="productos-grid" id="menu-grid">
             <?php foreach ($productos as $p): ?>
-            <div class="producto-card menu-item" data-cat="<?= $p['categoria_id'] ?>" data-id="<?= $p['id'] ?>" data-nombre="<?= htmlspecialchars($p['nombre']) ?>">
+            <div class="producto-card menu-item"
+                data-cat="<?= $p['categoria_id'] ?>"
+                data-id="<?= $p['id'] ?>"
+                data-nombre="<?= htmlspecialchars($p['nombre']) ?>">
                 <div class="producto-thumb">
                     <?php
                     $catIcono = '🍽️';
@@ -164,10 +158,12 @@ require_once '../../includes/header.php';
                     <div class="producto-nombre"><?= htmlspecialchars($p['nombre']) ?></div>
                     <div class="producto-precio">S/ <?= number_format($p['precio'],2) ?></div>
                     <?php if ($p['tiene_opciones']): ?>
-                    <div style="font-size:.68rem;color:var(--naranja);font-weight:600;">⚙️ Personalizable</div>
+                    <div style="font-size:.68rem;color:var(--warning);font-weight:600;">
+                        <i class="fa-solid fa-sliders"></i> Personalizable
+                    </div>
                     <?php endif; ?>
                     <button class="btn-agregar" onclick="agregarProducto(<?= htmlspecialchars(json_encode($p)) ?>)">
-                        ➕ Agregar
+                        <i class="fa-solid fa-plus"></i> Agregar
                     </button>
                 </div>
             </div>
@@ -175,17 +171,23 @@ require_once '../../includes/header.php';
         </div>
     </div>
 
-    <!-- ── Panel lateral del pedido ──── -->
+    <!-- Panel lateral del pedido -->
     <div class="panel-overlay" id="panel-overlay" onclick="togglePanelPedido()"></div>
     <div class="panel-pedido" id="panel-pedido">
 
         <!-- Encabezado del pedido -->
-        <div style="padding:16px;background:linear-gradient(135deg,var(--rojo),var(--rojo-dark));color:#fff;border-radius:inherit;display:flex;justify-content:space-between;align-items:center;">
+        <div style="padding:16px;background:var(--primary);color:#fff;border-radius:inherit;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
             <div>
                 <div style="font-weight:700;font-size:1rem;"><?= htmlspecialchars($mesaLabel) ?></div>
-                <div style="font-size:.8rem;opacity:.85;"><?= $pedido['tipo']==='aqui'?'🏠 Comer aquí':'🛍️ Para llevar' ?> · Pedido #<?= $pedidoId ?></div>
+                <div style="font-size:.8rem;opacity:.85;">
+                    <i class="fa-solid <?= $pedido['tipo']==='aqui' ? 'fa-house' : 'fa-bag-shopping' ?>"></i>
+                    <?= $pedido['tipo']==='aqui' ? 'Comer aquí' : 'Para llevar' ?>
+                    · Pedido #<?= $pedidoId ?>
+                </div>
             </div>
-            <button class="btn-cerrar-panel-movil" onclick="togglePanelPedido()">✕</button>
+            <button class="btn-cerrar-panel-movil" onclick="togglePanelPedido()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
         <!-- Items del pedido -->
@@ -204,32 +206,36 @@ require_once '../../includes/header.php';
             <?php endforeach; ?>
             <?php else: ?>
             <div class="empty-state" style="padding:30px 0;">
-                <div class="icon">🍽️</div>
+                <div class="icon"><i class="fa-solid fa-utensils"></i></div>
                 <p>Agrega platos del menú</p>
             </div>
             <?php endif; ?>
         </div>
 
         <!-- Nuevos items pendientes -->
-        <div id="lista-nuevos" style="padding:0 16px;border-top:2px dashed var(--naranja);display:none;">
-            <div style="font-size:.75rem;font-weight:700;color:var(--naranja);padding:8px 0;">⏳ Por enviar a cocina:</div>
+        <div id="lista-nuevos" style="padding:0 16px;border-top:2px dashed var(--warning);display:none;">
+            <div style="font-size:.75rem;font-weight:700;color:var(--warning);padding:8px 0;">
+                <i class="fa-solid fa-hourglass-half"></i> Por enviar a cocina:
+            </div>
         </div>
 
         <!-- Total y botones -->
-        <div style="padding:16px;border-top:1px solid var(--borde);">
+        <div style="padding:16px;border-top:1px solid var(--border);flex-shrink:0;">
             <div class="pedido-total">
                 <span>Total actual</span>
                 <span id="total-actual">S/ <?= number_format($pedido['total'],2) ?></span>
             </div>
-            <div id="nuevo-total-row" style="display:none;" class="resumen-row" style="color:var(--naranja);">
+            <div id="nuevo-total-row" style="display:none;" class="resumen-row" style="color:var(--warning);">
                 <span>+ Nuevos items</span>
                 <span id="nuevo-total-val">S/ 0.00</span>
             </div>
             <button class="btn btn-primario btn-full btn-lg" id="btn-enviar" onclick="enviarACocina()" disabled>
-                📤 Enviar a cocina
+                <i class="fa-solid fa-paper-plane"></i> Enviar a cocina
             </button>
-            <a href="cobrar.php?pedido_id=<?= $pedidoId ?>" class="btn btn-exito btn-full mt-8" style="min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;font-weight:700;">
-                💰 Ir a cobrar
+            <a href="cobrar.php?pedido_id=<?= $pedidoId ?>"
+               class="btn btn-exito btn-full mt-8"
+               style="min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--radius-md);font-weight:700;">
+                <i class="fa-solid fa-sack-dollar"></i> Ir a cobrar
             </a>
         </div>
     </div>
@@ -239,32 +245,26 @@ require_once '../../includes/header.php';
 <!-- Barra inferior fija para móviles -->
 <button class="barra-ver-pedido" onclick="togglePanelPedido()">
     <div class="barra-left">
-        <span style="font-size:1.3rem;">🛒</span>
+        <i class="fa-solid fa-bag-shopping" style="font-size:1.2rem;"></i>
         <span class="barra-badge" id="barra-items-count"><?= count($items) ?> plato(s)</span>
     </div>
     <span class="barra-subtotal" id="barra-subtotal">S/ <?= number_format($pedido['total'], 2) ?></span>
-    <span class="barra-cta">Ver pedido →</span>
+    <span class="barra-cta">Ver pedido <i class="fa-solid fa-arrow-right"></i></span>
 </button>
 
 <script>
-const PEDIDO_ID        = <?= $pedidoId ?>;
-const RESTAURANTE_ID   = <?= $restauranteId ?>;
-let nuevosItems        = []; // items añadidos en esta sesión pendientes de enviar
-let nuevoTotal         = 0;
-
-let catActual = '';
-let textoBuscado = '';
+const PEDIDO_ID      = <?= $pedidoId ?>;
+const RESTAURANTE_ID = <?= $restauranteId ?>;
+let nuevosItems      = [];
+let nuevoTotal       = 0;
+let catActual = '', textoBuscado = '';
 
 function aplicarFiltros() {
     const texto = textoBuscado.toLowerCase();
     document.querySelectorAll('.menu-item').forEach(p => {
         const nombre = (p.dataset.nombre || '').toLowerCase();
         const cat    = p.dataset.cat;
-        
-        const pasaCat = (!catActual || cat == catActual);
-        const pasaTxt = (!texto     || nombre.includes(texto));
-        
-        p.style.display = (pasaCat && pasaTxt) ? '' : 'none';
+        p.style.display = ((!catActual || cat == catActual) && (!texto || nombre.includes(texto))) ? '' : 'none';
     });
 }
 
@@ -275,17 +275,13 @@ function filtrarCat(catId, btn) {
     aplicarFiltros();
 }
 
-function buscarPlatos(texto) {
-    textoBuscado = texto;
-    aplicarFiltros();
-}
+function buscarPlatos(texto) { textoBuscado = texto; aplicarFiltros(); }
 
 async function agregarProducto(producto) {
     let selecciones = [];
-
     if (producto.tiene_opciones == 1) {
         selecciones = await mostrarOpcionesSecuenciales(producto.id, producto.nombre);
-        if (selecciones === null) return; // cancelado
+        if (selecciones === null) return;
     }
 
     const item = {
@@ -294,21 +290,14 @@ async function agregarProducto(producto) {
         precio:       parseFloat(producto.precio),
         cantidad:     1,
         selecciones:  selecciones,
-        opciones_str: '',
-        notas:        '',   // nota opcional para cocina
+        opciones_str: selecciones.length ? '(opciones seleccionadas)' : '',
+        notas:        '',
     };
-
-    // Cargar nombres de opciones si tiene
-    if (selecciones.length) {
-        // Usar los datos ya obtenidos — almacenar textualmente
-        item.opciones_str = '(opciones seleccionadas)';
-    }
 
     nuevosItems.push(item);
     nuevoTotal += item.precio;
-
     renderNuevosItems();
-    Toast.exito(`✅ ${producto.nombre} añadido`);
+    Toast.exito(`${producto.nombre} añadido`);
 }
 
 function renderNuevosItems() {
@@ -321,7 +310,9 @@ function renderNuevosItems() {
         return;
     }
     cont.style.display = 'block';
-    cont.innerHTML = '<div style="font-size:.75rem;font-weight:700;color:var(--naranja);padding:8px 0;">⏳ Por enviar a cocina:</div>';
+    cont.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:var(--warning);padding:8px 0;">
+        <i class="fa-solid fa-hourglass-half"></i> Por enviar a cocina:
+    </div>`;
     nuevosItems.forEach((it, i) => {
         cont.innerHTML += `
             <div class="pedido-item" style="flex-direction:column;align-items:stretch;gap:6px;">
@@ -331,16 +322,19 @@ function renderNuevosItems() {
                         ${it.opciones_str ? `<div class="pedido-item-opciones">${it.opciones_str}</div>` : ''}
                     </div>
                     <span class="pedido-item-precio">S/ ${it.precio.toFixed(2)}</span>
-                    <button onclick="quitarNuevo(${i})" style="background:none;border:none;color:var(--gris);cursor:pointer;font-size:1rem;flex-shrink:0;">✕</button>
+                    <button onclick="quitarNuevo(${i})"
+                        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.875rem;flex-shrink:0;min-height:32px;display:flex;align-items:center;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
                 <textarea
                     id="nota-item-${i}"
                     rows="1"
-                    placeholder="📝 Nota para cocina (opcional)…"
+                    placeholder="Nota para cocina (opcional)…"
                     oninput="actualizarNota(${i}, this.value)"
-                    style="width:100%;font-size:.78rem;border:1px dashed var(--borde);border-radius:6px;padding:6px 8px;background:#fffdf9;color:var(--texto);resize:none;font-family:var(--fuente);outline:none;transition:border-color .2s;"
-                    onfocus="this.style.borderColor='var(--naranja)'"
-                    onblur="this.style.borderColor='var(--borde)'"
+                    style="width:100%;font-size:.78rem;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:6px 8px;background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:var(--font);outline:none;transition:border-color var(--transition);"
+                    onfocus="this.style.borderColor='var(--warning)'"
+                    onblur="this.style.borderColor='var(--border)'"
                 >${it.notas}</textarea>
             </div>`;
     });
@@ -349,10 +343,6 @@ function renderNuevosItems() {
     document.getElementById('nuevo-total-val').textContent = `S/ ${nuevoTotal.toFixed(2)}`;
 }
 
-/**
- * Actualiza la nota de un item SIN re-renderizar la lista,
- * así el usuario no pierde el foco mientras escribe.
- */
 function actualizarNota(idx, valor) {
     if (nuevosItems[idx]) nuevosItems[idx].notas = valor.trim();
 }
@@ -364,14 +354,12 @@ function quitarNuevo(idx) {
 }
 
 function actualizarCountItems() {
-    const baseItems    = <?= count($items) ?>;
-    const totalItems   = baseItems + nuevosItems.length;
-    const totalBase    = <?= $pedido['total'] ?>;
+    const baseItems  = <?= count($items) ?>;
+    const totalItems = baseItems + nuevosItems.length;
+    const totalBase  = <?= $pedido['total'] ?>;
     const totalMostrar = totalBase + nuevoTotal;
-
-    // Actualizar la barra inferior fija
-    const barraCount    = document.getElementById('barra-items-count');
-    const barraSub      = document.getElementById('barra-subtotal');
+    const barraCount = document.getElementById('barra-items-count');
+    const barraSub   = document.getElementById('barra-subtotal');
     if (barraCount) barraCount.textContent = `${totalItems} plato(s)`;
     if (barraSub)   barraSub.textContent   = `S/ ${totalMostrar.toFixed(2)}`;
 }
@@ -381,11 +369,11 @@ function togglePanelPedido() {
     document.getElementById('panel-overlay').classList.toggle('activo');
 }
 
-
 async function enviarACocina() {
     if (!nuevosItems.length) return;
     const btn = document.getElementById('btn-enviar');
-    btn.disabled = true; btn.textContent = '⏳ Enviando...';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
     try {
         const res  = await fetch(`${BASE_URL}/api/agregar_item.php`, {
@@ -395,17 +383,17 @@ async function enviarACocina() {
         });
         const json = await res.json();
         if (json.success) {
-            Toast.exito('🚀 Pedido enviado a cocina!');
+            Toast.exito('¡Pedido enviado a cocina!');
             setTimeout(() => window.location.href = 'dashboard.php', 800);
         } else {
             Toast.error(json.message);
             btn.disabled = false;
-            btn.textContent = '📤 Enviar a cocina';
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar a cocina';
         }
     } catch(e) {
         Toast.error('Error de conexión');
         btn.disabled = false;
-        btn.textContent = '📤 Enviar a cocina';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar a cocina';
     }
 }
 </script>

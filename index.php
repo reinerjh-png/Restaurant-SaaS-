@@ -28,51 +28,66 @@ unset($_SESSION['login_error']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sistema SaaS de gestión para restaurantes — Ingresa a tu cuenta">
-    <title>Login — RestSaaS | R.DEV</title>
+    <title>Iniciar sesión — RestSaaS | R.DEV</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css">
 </head>
 <body>
 
 <div class="login-page">
     <div class="login-box">
+
         <!-- Logo -->
         <div class="login-logo">
-            <div class="brand" style="margin-bottom: 5px;">
-                <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú Logo" style="max-height: 80px; width: auto; object-fit: contain;">
-            </div>
+            <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú Logo"
+                 style="max-height:80px; width:auto; object-fit:contain; margin:0 auto 8px;">
             <div class="subtitle">Sistema de Gestión para Restaurantes · <strong>R.DEV</strong></div>
         </div>
 
-        <h2 class="login-title">Bienvenido de vuelta</h2>
+        <h1 class="login-title">Bienvenido de vuelta</h1>
         <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
 
         <!-- Alerta de error -->
         <?php if ($error): ?>
-        <div style="background:#FDEDEC;border-left:4px solid var(--peligro);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:.88rem;color:var(--rojo-dark);font-weight:500;">
-            ❌ <?= htmlspecialchars($error) ?>
+        <div class="alert-error">
+            <i class="fa-solid fa-circle-xmark"></i>
+            <?= htmlspecialchars($error) ?>
         </div>
         <?php endif; ?>
 
         <!-- Formulario -->
         <form action="<?= BASE_URL ?>/auth/login.php" method="POST" id="form-login">
+
             <div class="form-group">
-                <label class="form-label" for="email">👤 Usuario</label>
-                <input
-                    type="text"
-                    id="email"
-                    name="email"
-                    class="form-control"
-                    placeholder="usuario"
-                    required
-                    autocomplete="username"
-                    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                >
+                <label class="form-label" for="email">
+                    <i class="fa-solid fa-user" style="margin-right:4px;color:var(--text-muted);font-size:.75rem;"></i>
+                    Usuario
+                </label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon-left"><i class="fa-solid fa-at"></i></span>
+                    <input
+                        type="text"
+                        id="email"
+                        name="email"
+                        class="form-control"
+                        placeholder="Tu usuario o correo"
+                        required
+                        autocomplete="username"
+                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                    >
+                </div>
             </div>
+
             <div class="form-group">
-                <label class="form-label" for="password">🔒 Contraseña</label>
-                <div style="position:relative;">
+                <label class="form-label" for="password">
+                    <i class="fa-solid fa-lock" style="margin-right:4px;color:var(--text-muted);font-size:.75rem;"></i>
+                    Contraseña
+                </label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon-left"><i class="fa-solid fa-lock"></i></span>
                     <input
                         type="password"
                         id="password"
@@ -83,41 +98,43 @@ unset($_SESSION['login_error']);
                         autocomplete="current-password"
                         style="padding-right:44px;"
                     >
-                    <button type="button" id="toggle-pass"
-                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--gris);"
-                        title="Mostrar/ocultar contraseña">👁️</button>
+                    <button type="button" class="input-icon-right" id="toggle-pass"
+                            title="Mostrar/ocultar contraseña" aria-label="Mostrar contraseña">
+                        <i class="fa-solid fa-eye" id="toggle-pass-icon"></i>
+                    </button>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primario btn-full btn-lg mt-16" id="btn-login">
-                🚀 Ingresar al sistema
+            <button type="submit" class="btn btn-primario btn-full btn-lg mt-16" id="btn-login"
+                    style="font-size:1rem; margin-top:24px;">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Ingresar al sistema
             </button>
         </form>
-
-
 
         <div class="login-footer">
             <p>Desarrollado por <strong>Reiner Jiménez</strong> · R.DEV</p>
             <p style="margin-top:2px;">© <?= date('Y') ?> · Todos los derechos reservados</p>
         </div>
+
     </div>
 </div>
 
 <script>
 // Toggle visibilidad contraseña
 document.getElementById('toggle-pass').addEventListener('click', function() {
-    const inp = document.getElementById('password');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-    this.textContent = inp.type === 'password' ? '👁️' : '🙈';
+    const inp  = document.getElementById('password');
+    const icon = document.getElementById('toggle-pass-icon');
+    const show = inp.type === 'password';
+    inp.type   = show ? 'text' : 'password';
+    icon.className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
 });
-
-
 
 // Prevenir doble submit
 document.getElementById('form-login').addEventListener('submit', function() {
     const btn = document.getElementById('btn-login');
     btn.disabled = true;
-    btn.textContent = '⏳ Verificando...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...';
 });
 </script>
 </body>

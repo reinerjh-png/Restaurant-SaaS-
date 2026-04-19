@@ -10,11 +10,9 @@ requireRole(['admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
-// Rango de fechas
 $fechaInicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
 $fechaFin    = $_GET['fecha_fin']    ?? date('Y-m-d');
 
-// Ventas por día
 $stDias = $db->prepare("
     SELECT DATE(created_at) AS fecha,
            COUNT(*) AS pedidos,
@@ -28,7 +26,6 @@ $stDias = $db->prepare("
 $stDias->execute([$restauranteId, $fechaInicio, $fechaFin]);
 $ventasDia = $stDias->fetchAll();
 
-// Ventas por producto
 $stProds = $db->prepare("
     SELECT pr.nombre, SUM(pi.cantidad) AS vendidos, SUM(pi.subtotal) AS ingreso
     FROM pedido_items pi
@@ -43,7 +40,6 @@ $stProds = $db->prepare("
 $stProds->execute([$restauranteId, $fechaInicio, $fechaFin]);
 $ventasProds = $stProds->fetchAll();
 
-// Ventas por método de pago
 $stMetodos = $db->prepare("
     SELECT pa.metodo, SUM(pa.monto) AS total, COUNT(*) AS veces
     FROM pagos pa
@@ -64,13 +60,13 @@ require_once '../../includes/header.php';
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon">📊</span> Dashboard</a></li>
-            <li><a href="mesas.php"><span class="menu-icon">🪑</span> Mesas</a></li>
-            <li><a href="menu_categorias.php"><span class="menu-icon">📂</span> Categorías</a></li>
-            <li><a href="menu_productos.php"><span class="menu-icon">🍽️</span> Productos</a></li>
-            <li><a href="usuarios.php"><span class="menu-icon">👥</span> Usuarios</a></li>
-            <li><a href="reportes.php" class="active"><span class="menu-icon">📈</span> Reportes</a></li>
-            <li><a href="historial.php"><span class="menu-icon">🗂️</span> Historial</a></li>
+            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-chart-bar"></i></span> Dashboard</a></li>
+            <li><a href="mesas.php"><span class="menu-icon"><i class="fa-solid fa-chair"></i></span> Mesas</a></li>
+            <li><a href="menu_categorias.php"><span class="menu-icon"><i class="fa-solid fa-folder"></i></span> Categorías</a></li>
+            <li><a href="menu_productos.php"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
+            <li><a href="usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
+            <li><a href="reportes.php" class="active"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
+            <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
         </ul>
     </aside>
 
@@ -79,7 +75,7 @@ require_once '../../includes/header.php';
 
             <div class="d-flex align-center justify-between mb-16">
                 <div>
-                    <h1>📈 Reportes de Ventas</h1>
+                    <h1><i class="fa-solid fa-chart-line" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Reportes de Ventas</h1>
                     <p>Del <?= date('d/m/Y', strtotime($fechaInicio)) ?> al <?= date('d/m/Y', strtotime($fechaFin)) ?></p>
                 </div>
             </div>
@@ -95,32 +91,38 @@ require_once '../../includes/header.php';
                         <label class="form-label">Hasta</label>
                         <input type="date" name="fecha_fin" class="form-control" value="<?= $fechaFin ?>">
                     </div>
-                    <button type="submit" class="btn btn-primario">🔍 Filtrar</button>
-                    <a href="reportes.php" class="btn btn-ghost">↺ Este mes</a>
+                    <button type="submit" class="btn btn-primario">
+                        <i class="fa-solid fa-magnifying-glass"></i> Filtrar
+                    </button>
+                    <a href="reportes.php" class="btn btn-ghost">
+                        <i class="fa-solid fa-rotate-left"></i> Este mes
+                    </a>
                 </form>
             </div>
 
             <!-- Total del período -->
             <div class="stats-grid mb-24">
                 <div class="stat-card verde">
-                    <div class="stat-icon">💰</div>
+                    <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div class="stat-valor">S/ <?= number_format($totalGeneral, 2) ?></div>
                     <div class="stat-label">Total período</div>
                 </div>
                 <div class="stat-card rojo">
-                    <div class="stat-icon">🧾</div>
+                    <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
                     <div class="stat-valor"><?= array_sum(array_column($ventasDia, 'pedidos')) ?></div>
                     <div class="stat-label">Pedidos totales</div>
                 </div>
                 <?php
-                $metodoMap = array_column($ventasMetodos, 'total', 'metodo');
-                $metodos = [
-                    ['efectivo','💵','Efectivo'],['yape','📱','Yape'],['transferencia','🏦','Transf.']
+                $metodoMap2 = array_column($ventasMetodos, 'total', 'metodo');
+                $metodos2 = [
+                    ['efectivo','fa-money-bill-wave','Efectivo'],
+                    ['yape','fa-mobile-screen','Yape'],
+                    ['transferencia','fa-building-columns','Transferencia'],
                 ];
-                foreach ($metodos as [$key,$icon,$label]): ?>
+                foreach ($metodos2 as [$key,$icon,$label]): ?>
                 <div class="stat-card naranja">
-                    <div class="stat-icon"><?= $icon ?></div>
-                    <div class="stat-valor">S/ <?= number_format($metodoMap[$key] ?? 0, 2) ?></div>
+                    <div class="stat-icon"><i class="fa-solid <?= $icon ?>"></i></div>
+                    <div class="stat-valor">S/ <?= number_format($metodoMap2[$key] ?? 0, 2) ?></div>
                     <div class="stat-label"><?= $label ?></div>
                 </div>
                 <?php endforeach; ?>
@@ -129,7 +131,7 @@ require_once '../../includes/header.php';
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
                 <!-- Ventas por día -->
                 <div class="card">
-                    <div class="card-title">📅 Ventas por día</div>
+                    <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Ventas por día</div>
                     <?php if ($ventasDia): ?>
                     <div class="table-wrap">
                         <table>
@@ -146,13 +148,16 @@ require_once '../../includes/header.php';
                         </table>
                     </div>
                     <?php else: ?>
-                    <div class="empty-state" style="padding:30px 0;"><div class="icon">📅</div><p>Sin datos en el período</p></div>
+                    <div class="empty-state" style="padding:30px 0;">
+                        <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
+                        <p>Sin datos en el período</p>
+                    </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- Top productos -->
                 <div class="card">
-                    <div class="card-title">🏆 Top productos vendidos</div>
+                    <div class="card-title"><i class="fa-solid fa-trophy"></i> Top productos vendidos</div>
                     <?php if ($ventasProds): ?>
                     <div class="table-wrap">
                         <table>
@@ -170,7 +175,10 @@ require_once '../../includes/header.php';
                         </table>
                     </div>
                     <?php else: ?>
-                    <div class="empty-state" style="padding:30px 0;"><div class="icon">🍽️</div><p>Sin ventas en el período</p></div>
+                    <div class="empty-state" style="padding:30px 0;">
+                        <div class="icon"><i class="fa-solid fa-utensils"></i></div>
+                        <p>Sin ventas en el período</p>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>

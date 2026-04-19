@@ -23,11 +23,14 @@ $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <meta name="theme-color" content="#C0392B">
+    <meta name="theme-color" content="#1A1A2E">
     <meta name="description" content="Sistema de gestión para restaurante — R.DEV">
     <title><?= htmlspecialchars($pageTitle ?? 'Sistema Restaurante') ?> | R.DEV</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <script>window.BASE_URL = "<?= BASE_URL ?>";</script>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css?v=<?= filemtime(__DIR__ . '/../assets/css/main.css') ?>">
 </head>
@@ -36,19 +39,25 @@ $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
 <!-- Navbar principal -->
 <nav class="navbar">
     <div class="navbar-brand">
-        <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú" style="height: 32px; width: auto; align-self: center;">
+        <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú" style="height: 32px; width: auto;">
     </div>
     <div class="navbar-right">
         <?php if (($_SESSION['rol'] ?? '') === 'superadmin' && strpos($_SERVER['REQUEST_URI'] ?? '', '/roles/admin/') !== false): ?>
-            <a href="<?= BASE_URL ?>/roles/superadmin/dashboard.php" style="margin-right:15px; color:white; font-size:0.8rem; text-decoration:none; background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.3);">🔙 Volver al panel global</a>
+            <a href="<?= BASE_URL ?>/roles/superadmin/dashboard.php"
+               style="margin-right:8px; color:rgba(255,255,255,.85); font-size:0.8rem; text-decoration:none; background:rgba(255,255,255,.15); padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,.2); display:inline-flex; align-items:center; gap:6px;">
+               <i class="fa-solid fa-arrow-left"></i> Panel global
+            </a>
         <?php endif; ?>
         <div class="navbar-user">
             <div class="avatar"><?= $nombreInicial ?></div>
-            <span><?= htmlspecialchars($_SESSION['nombre'] ?? 'Usuario') ?></span>
+            <span style="font-size:0.82rem;"><?= htmlspecialchars($_SESSION['nombre'] ?? 'Usuario') ?></span>
             <span class="rol-badge rol-<?= $_SESSION['rol'] ?>"><?= $rolLabel ?></span>
         </div>
         <?php if (!isset($hideLogout) || !$hideLogout): ?>
-        <a href="<?= BASE_URL ?>/auth/logout.php" class="btn-logout">⏻ Salir</a>
+        <a href="<?= BASE_URL ?>/auth/logout.php" class="btn-logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="logout-label">Salir</span>
+        </a>
         <?php endif; ?>
     </div>
 </nav>
@@ -59,7 +68,7 @@ $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
         <div class="modal-header">
             <div>
                 <div class="modal-title" id="modal-opciones-titulo">Elige una opción</div>
-                <div style="font-size:.78rem;color:var(--texto-light);margin-top:2px" id="modal-opciones-subtitulo"></div>
+                <div style="font-size:.78rem;color:var(--text-secondary);margin-top:2px" id="modal-opciones-subtitulo"></div>
             </div>
         </div>
         <div class="modal-body">
@@ -67,7 +76,7 @@ $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" id="modal-opciones-cancelar">Cancelar</button>
-            <button class="btn btn-primario btn-full" id="modal-opciones-confirmar">Continuar →</button>
+            <button class="btn btn-primario btn-full" id="modal-opciones-confirmar">Continuar <i class="fa-solid fa-arrow-right"></i></button>
         </div>
     </div>
 </div>
@@ -75,9 +84,13 @@ $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
 <!-- Modal de confirmación genérico -->
 <div class="modal-overlay" id="modal-confirmar">
     <div class="modal">
-        <div class="modal-header"><div class="modal-title">⚠️ Confirmar acción</div></div>
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i> Confirmar acción
+            </div>
+        </div>
         <div class="modal-body">
-            <p id="modal-confirmar-msg" style="color:var(--texto);font-size:.95rem;"></p>
+            <p id="modal-confirmar-msg" style="color:var(--text-primary);font-size:.95rem;"></p>
         </div>
         <div class="modal-footer">
             <button class="btn btn-ghost btn-full" onclick="Modal.cerrar('modal-confirmar')">Cancelar</button>

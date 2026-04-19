@@ -10,7 +10,6 @@ requireRole(['atencion', 'admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
-// Mesas con su pedido activo si existe
 $stMesas = $db->prepare("
     SELECT m.*,
            p.id AS pedido_id,
@@ -37,33 +36,37 @@ require_once '../../includes/header.php';
 <div style="padding:16px;" class="page-content">
     <div class="d-flex align-center justify-between mb-16">
         <div>
-            <h1>🗺️ Mapa de Mesas</h1>
+            <h1><i class="fa-solid fa-map-location-dot" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Mapa de Mesas</h1>
             <p id="hora-actual"></p>
         </div>
-        <div class="d-flex gap-8">
-            <!-- Leyenda -->
-            <div style="display:flex;gap:12px;align-items:center;font-size:.78rem;font-weight:600;">
-                <span>🟢 Libre</span>
-                <span>🔴 Ocupada</span>
-                <span>🔵 Reservada</span>
-            </div>
+        <!-- Leyenda -->
+        <div style="display:flex;gap:12px;align-items:center;font-size:.78rem;font-weight:600;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:5px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--success);display:inline-block;"></span> Libre
+            </span>
+            <span style="display:flex;align-items:center;gap:5px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--primary);display:inline-block;"></span> Ocupada
+            </span>
+            <span style="display:flex;align-items:center;gap:5px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--warning);display:inline-block;"></span> Reservada
+            </span>
         </div>
     </div>
 
     <!-- Resumen rápido -->
     <div class="stats-grid mb-16">
         <div class="stat-card verde">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
             <div class="stat-valor" id="cnt-libres"><?= count(array_filter($mesas, fn($m) => $m['estado'] === 'libre')) ?></div>
             <div class="stat-label">Mesas libres</div>
         </div>
         <div class="stat-card rojo">
-            <div class="stat-icon">⏳</div>
+            <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
             <div class="stat-valor" id="cnt-ocupadas"><?= count(array_filter($mesas, fn($m) => $m['estado'] === 'ocupada')) ?></div>
             <div class="stat-label">Mesas ocupadas</div>
         </div>
         <div class="stat-card naranja">
-            <div class="stat-icon">🧾</div>
+            <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
             <div class="stat-valor" id="cnt-activos"><?= count(array_filter($mesas, fn($m) => $m['pedido_id'])) ?></div>
             <div class="stat-label">Pedidos activos</div>
         </div>
@@ -84,11 +87,13 @@ require_once '../../includes/header.php';
             <?php endif; ?>
 
             <div class="mesa-numero"><?= $m['numero'] ?></div>
-            <div class="mesa-capacidad">👥 <?= $m['capacidad'] ?></div>
+            <div class="mesa-capacidad">
+                <i class="fa-solid fa-users" style="font-size:.65rem;"></i> <?= $m['capacidad'] ?>
+            </div>
 
             <?php if ($m['pedido_id']): ?>
                 <div class="mesa-estado">S/ <?= number_format($m['total'],2) ?></div>
-                <div style="font-size:.68rem;color:var(--texto-light);"><?= $m['num_items'] ?> item(s)</div>
+                <div style="font-size:.68rem;color:var(--text-secondary);"><?= $m['num_items'] ?> ítem(s)</div>
             <?php else: ?>
                 <div class="mesa-estado"><?= strtoupper($m['estado']) ?></div>
             <?php endif; ?>
@@ -102,10 +107,10 @@ require_once '../../includes/header.php';
     <div class="modal">
         <div class="modal-header">
             <div>
-                <div class="modal-title" id="modal-mesa-titulo">Mesa</div>
-                <div style="font-size:.78rem;color:var(--texto-light);margin-top:2px;" id="modal-mesa-sub"></div>
+                <div class="modal-title" id="modal-mesa-titulo"><i class="fa-solid fa-chair"></i> Mesa</div>
+                <div style="font-size:.78rem;color:var(--text-secondary);margin-top:2px;" id="modal-mesa-sub"></div>
             </div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-mesa')">✕</button>
+            <button class="modal-close" onclick="Modal.cerrar('modal-mesa')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body" id="modal-mesa-body"></div>
     </div>
@@ -115,17 +120,19 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-tipo">
     <div class="modal">
         <div class="modal-header">
-            <div class="modal-title">¿Cómo consume?</div>
+            <div class="modal-title"><i class="fa-solid fa-circle-question"></i> ¿Cómo consume?</div>
         </div>
         <div class="modal-body">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 0;">
                 <button id="btn-aqui" class="btn btn-exito btn-lg"
                     style="flex-direction:column;gap:8px;height:100px;font-size:1rem;">
-                    🏠<span>Comer aquí</span>
+                    <i class="fa-solid fa-house fa-lg"></i>
+                    <span>Comer aquí</span>
                 </button>
                 <button id="btn-llevar" class="btn btn-naranja btn-lg"
                     style="flex-direction:column;gap:8px;height:100px;font-size:1rem;">
-                    🛍️<span>Para llevar</span>
+                    <i class="fa-solid fa-bag-shopping fa-lg"></i>
+                    <span>Para llevar</span>
                 </button>
             </div>
         </div>
@@ -139,8 +146,8 @@ require_once '../../includes/header.php';
 <div class="modal-overlay" id="modal-detalle">
     <div class="modal" style="max-height:85vh;display:flex;flex-direction:column;">
         <div class="modal-header">
-            <div class="modal-title">📋 Detalle del Pedido</div>
-            <button class="modal-close" onclick="Modal.cerrar('modal-detalle')">✕</button>
+            <div class="modal-title"><i class="fa-solid fa-receipt"></i> Detalle del Pedido</div>
+            <button class="modal-close" onclick="Modal.cerrar('modal-detalle')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-body" id="modal-detalle-body" style="overflow-y:auto;">
             <div class="text-center"><div class="spinner"></div></div>
@@ -155,7 +162,8 @@ let mesaActual = null;
 // Reloj
 function actualizarReloj() {
     const now = new Date();
-    document.getElementById('hora-actual').textContent =
+    const el = document.getElementById('hora-actual');
+    if (el) el.textContent =
         now.toLocaleDateString('es-PE', {weekday:'long', day:'numeric', month:'long'}) + ' · ' +
         now.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
 }
@@ -167,41 +175,48 @@ function clickMesa(mesa) {
     const titulo = document.getElementById('modal-mesa-titulo');
     const sub    = document.getElementById('modal-mesa-sub');
     const body   = document.getElementById('modal-mesa-body');
-    titulo.textContent = `Mesa ${mesa.numero}`;
+    titulo.innerHTML = `<i class="fa-solid fa-chair"></i> Mesa ${mesa.numero}`;
 
     if (mesa.estado === 'libre') {
-        sub.textContent  = `👥 ${mesa.capacidad} personas · Libre`;
-        body.innerHTML   = `
+        sub.innerHTML = `<i class="fa-solid fa-users"></i> ${mesa.capacidad} personas &middot; Libre`;
+        body.innerHTML = `
             <div style="text-align:center;padding:10px 0;">
                 <div class="empty-state" style="padding:16px 0;">
-                    <div class="icon">🍽️</div>
+                    <div class="icon"><i class="fa-solid fa-utensils"></i></div>
                     <p>Esta mesa está libre.</p>
                 </div>
                 <button class="btn btn-primario btn-full btn-lg" onclick="iniciarPedido()">
-                    ➕ Iniciar nueva comanda
+                    <i class="fa-solid fa-plus"></i> Iniciar nueva comanda
                 </button>
             </div>`;
     } else if (mesa.pedido_id) {
         const minutos = mesa.pedido_inicio
             ? Math.round((Date.now() - new Date(mesa.pedido_inicio).getTime()) / 60000) : 0;
-        sub.textContent = `⏳ ${minutos} min · ${mesa.num_items} plato(s) · S/ ${parseFloat(mesa.total).toFixed(2)}`;
-        
+        sub.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> ${minutos} min &middot; ${mesa.num_items} plato(s) &middot; S/ ${parseFloat(mesa.total).toFixed(2)}`;
+
         let botonCancelar = '';
         if (ROL_ACTUAL !== 'atencion' || mesa.num_items == 0) {
             botonCancelar = `
                 <button onclick="cancelarPedido(${mesa.pedido_id})"
-                   class="btn btn-ghost btn-full mt-8" style="color:var(--rojo);font-weight:600;">❌ Desocupar Mesa (Cancela la comanda)</button>
-            `;
+                   class="btn btn-ghost btn-full mt-8" style="color:var(--danger);font-weight:600;">
+                   <i class="fa-solid fa-xmark"></i> Desocupar Mesa (Cancela la comanda)
+                </button>`;
         }
-        
-        body.innerHTML  = `
+
+        body.innerHTML = `
             <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0;">
                 <button onclick="verDetalle(${mesa.pedido_id})"
-                   class="btn btn-ghost btn-full btn-lg" style="border:2px solid var(--borde);font-weight:700;">👁️ Ver pedido actual</button>
+                   class="btn btn-ghost btn-full btn-lg">
+                   <i class="fa-solid fa-eye"></i> Ver pedido actual
+                </button>
                 <a href="<?= BASE_URL ?>/roles/atencion/comanda.php?pedido_id=${mesa.pedido_id}&mesa_id=${mesa.id}"
-                   class="btn btn-naranja btn-full btn-lg">➕ Añadir platos al pedido</a>
+                   class="btn btn-naranja btn-full btn-lg">
+                   <i class="fa-solid fa-plus"></i> Añadir platos al pedido
+                </a>
                 <a href="<?= BASE_URL ?>/roles/atencion/cobrar.php?pedido_id=${mesa.pedido_id}"
-                   class="btn btn-exito btn-full btn-lg">💰 Cobrar pedido (S/ ${parseFloat(mesa.total).toFixed(2)})</a>
+                   class="btn btn-exito btn-full btn-lg">
+                   <i class="fa-solid fa-sack-dollar"></i> Cobrar (S/ ${parseFloat(mesa.total).toFixed(2)})
+                </a>
                 ${botonCancelar}
             </div>`;
     } else {
@@ -215,8 +230,7 @@ function clickMesa(mesa) {
 function iniciarPedido() {
     Modal.cerrar('modal-mesa');
     setTimeout(() => Modal.abrir('modal-tipo'), 200);
-
-    document.getElementById('btn-aqui').onclick = () => crearPedidoYIr('aqui');
+    document.getElementById('btn-aqui').onclick   = () => crearPedidoYIr('aqui');
     document.getElementById('btn-llevar').onclick = () => crearPedidoYIr('llevar');
 }
 
@@ -229,51 +243,44 @@ async function verDetalle(pedidoId) {
         const json = await res.json();
         if (!json.success) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error al cargar</p>'; return; }
         const p = json.data;
-        let html = `<div style="margin-bottom:14px;">
-            <span class="badge badge-azul">#${p.id}</span>
-            ${p.tipo === 'aqui' ? '🏠 Aquí' : '🛍️ Para llevar'}
-            ${p.mesa_numero ? '· Mesa ' + p.mesa_numero : ''}
+        let html = `<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
+            <span class="badge badge-azul"><i class="fa-solid fa-hashtag"></i>${p.id}</span>
+            <span class="badge ${p.tipo==='aqui'?'badge-azul':'badge-naranja'}">
+                <i class="fa-solid ${p.tipo==='aqui'?'fa-house':'fa-bag-shopping'}"></i>
+                ${p.tipo==='aqui'?'Comer aquí':'Para llevar'}
+            </span>
+            ${p.mesa_numero ? `<span class="badge badge-gris">Mesa ${p.mesa_numero}</span>` : ''}
         </div>`;
-        // Agrupar ítems idénticos antes de mostrar
+
         const grupos = agruparItemsDetalle(p.items);
         grupos.forEach(item => {
-            html += `<div class="pedido-item" style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0;">
+            html += `<div class="pedido-item">
                 <div style="flex:1;">
-                    <div class="pedido-item-nombre" style="font-weight:600;font-size:0.9rem;">${item.cantidad}x ${item.nombre}</div>
-                    ${item.opciones ? `<div class="pedido-item-opciones" style="font-size:0.8rem;color:#666;">· ${item.opciones}</div>` : ''}
-                    ${item.notas ? `<div class="pedido-item-opciones" style="font-size:0.8rem;color:#666;">📝 ${item.notas}</div>` : ''}
+                    <div class="pedido-item-nombre">${item.cantidad}x ${item.nombre}</div>
+                    ${item.opciones ? `<div class="pedido-item-opciones">· ${item.opciones}</div>` : ''}
+                    ${item.notas   ? `<div class="pedido-item-opciones"><i class="fa-solid fa-note-sticky"></i> ${item.notas}</div>` : ''}
                 </div>
-                <div class="pedido-item-precio" style="font-weight:700;">S/ ${item.subtotalGrupo.toFixed(2)}</div>
+                <div class="pedido-item-precio">S/ ${item.subtotalGrupo.toFixed(2)}</div>
             </div>`;
         });
-        html += `<div class="pedido-total mt-12" style="display:flex;justify-content:space-between;padding-top:10px;font-weight:bold;font-size:1.1rem;"><span>Total</span><span class="text-rojo">S/ ${parseFloat(p.total).toFixed(2)}</span></div>`;
+        html += `<div class="pedido-total mt-12">
+            <span>Total</span>
+            <span style="color:var(--success);">S/ ${parseFloat(p.total).toFixed(2)}</span>
+        </div>`;
         document.getElementById('modal-detalle-body').innerHTML = html;
     } catch(e) { document.getElementById('modal-detalle-body').innerHTML = '<p>Error de conexión</p>'; }
 }
 
-/**
- * Agrupa ítems idénticos (mismo nombre + opciones + notas) en el modal de detalle.
- * Suma cantidades y subtotales. Ítems con nota distinta permanecen separados.
- */
 function agruparItemsDetalle(items) {
     const grupos = new Map();
     items.forEach(item => {
-        const key = [
-            item.nombre,
-            item.opciones || '',
-            item.notas    || '',
-        ].join('||');
-
+        const key = [item.nombre, item.opciones || '', item.notas || ''].join('||');
         if (grupos.has(key)) {
             const g = grupos.get(key);
             g.cantidad      += (item.cantidad || 1);
             g.subtotalGrupo += parseFloat(item.subtotal || 0);
         } else {
-            grupos.set(key, {
-                ...item,
-                cantidad:      item.cantidad || 1,
-                subtotalGrupo: parseFloat(item.subtotal || 0),
-            });
+            grupos.set(key, { ...item, cantidad: item.cantidad || 1, subtotalGrupo: parseFloat(item.subtotal || 0) });
         }
     });
     return Array.from(grupos.values());
@@ -291,13 +298,8 @@ function cancelarPedido(id) {
                     body: JSON.stringify({ id })
                 });
                 const json = await res.json();
-                if (json.success) { 
-                    Toast.exito(json.message); 
-                    setTimeout(() => location.reload(), 700); 
-                } else { 
-                    Toast.error(json.message); 
-                    Loading.hide();
-                }
+                if (json.success) { Toast.exito(json.message); setTimeout(() => location.reload(), 700); }
+                else { Toast.error(json.message); Loading.hide(); }
             } catch(e) { Toast.error('Error de conexión'); Loading.hide(); }
         });
     }, 200);
@@ -315,10 +317,7 @@ async function crearPedidoYIr(tipo) {
         const json = await res.json();
         if (json.success) {
             window.location.href = `${BASE_URL}/roles/atencion/comanda.php?pedido_id=${json.data.pedido_id}&mesa_id=${mesaActual.id}`;
-        } else {
-            Toast.error(json.message);
-            Loading.hide();
-        }
+        } else { Toast.error(json.message); Loading.hide(); }
     } catch(e) { Toast.error('Error de conexión'); Loading.hide(); }
 }
 
@@ -334,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, 25000);
 });
-
 </script>
 
 <?php require_once '../../includes/footer.php'; ?>
