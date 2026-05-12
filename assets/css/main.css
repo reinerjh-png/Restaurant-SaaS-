@@ -1054,62 +1054,85 @@ tbody td { padding: 11px 14px; color: var(--text-primary); }
 }
 .toast.saliendo { animation: fadeOut 0.3s ease forwards; }
 
-/* ── LOGIN PAGE ─────────────────────────────────────────────── */
-.login-page {
+/* ── SPLIT LOGIN PAGE ───────────────────────────────────────── */
+.split-layout {
+  display: flex;
   min-height: 100vh;
-  background: linear-gradient(160deg, #F8F8FA 0%, #ECEDF2 50%, #E0E1EA 100%);
+  background: var(--bg);
+}
+.split-left {
+  flex: 1 1 50%;
+  background: linear-gradient(145deg, #1A1A2E 0%, #0F0F1A 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 60px;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+}
+/* Esferas decorativas */
+.split-left::before, .split-left::after {
+  content: ''; position: absolute; border-radius: 50%;
+}
+.split-left::before {
+  width: 60vh; height: 60vh; background: rgba(124, 58, 237, 0.12);
+  top: -10vh; left: -10vh; filter: blur(60px);
+}
+.split-left::after {
+  width: 40vh; height: 40vh; background: rgba(37, 99, 235, 0.12);
+  bottom: -5vh; right: -5vh; filter: blur(50px);
+}
+.split-left-content {
+  position: relative; z-index: 10; max-width: 500px; margin: 0 auto;
+}
+.split-logo {
+  max-height: 110px; width: auto; object-fit: contain; margin-bottom: 40px;
+}
+.split-headline {
+  font-size: clamp(1.8rem, 3.5vw, 2.7rem); font-weight: 800; line-height: 1.25; margin-bottom: 24px;
+  background: linear-gradient(to right, #ffffff, #e0e0e0); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.split-description {
+  font-size: 1.05rem; color: rgba(255,255,255,0.65); line-height: 1.6; font-weight: 400;
+}
+
+.split-right {
+  flex: 1 1 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
+  padding: 30px;
+  background: var(--bg);
 }
-/* Esferas decorativas */
-.login-page::before {
-  content: '';
-  position: absolute;
-  width: 500px; height: 500px;
-  border-radius: 50%;
-  background: rgba(26,26,46,.04);
-  top: -180px; right: -120px;
-}
-.login-page::after {
-  content: '';
-  position: absolute;
-  width: 350px; height: 350px;
-  border-radius: 50%;
-  background: rgba(26,26,46,.04);
-  bottom: -100px; left: -80px;
-}
-.login-box {
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  padding: 40px 36px;
+.login-box-new {
   width: 100%;
   max-width: 420px;
-  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
-  position: relative;
-  z-index: 1;
 }
-.login-logo {
-  text-align: center;
-  margin-bottom: 30px;
-}
-.login-logo .subtitle {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 8px;
-  font-weight: 500;
-}
-.login-title  { font-size: 1.375rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
-.login-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 28px; }
+.login-logo-mobile { display: none; }
+.login-title { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px; letter-spacing: -0.02em; }
+.login-subtitle { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 36px; }
+
 .login-footer {
   text-align: center;
-  margin-top: 28px;
-  font-size: 0.73rem;
+  margin-top: 32px;
+  font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .split-layout { flex-direction: column; }
+  .split-left {
+    flex: none; padding: 40px 20px; min-height: 250px; text-align: center;
+  }
+  .split-left::before { width: 300px; height: 300px; }
+  .split-left::after { display: none; }
+  .split-left-content { margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+  .split-logo { max-height: 80px; margin-bottom: 20px; }
+  .split-headline { font-size: 1.6rem; margin-bottom: 12px; }
+  .split-description { font-size: 0.95rem; }
+  .split-right { padding: 40px 20px; align-items: flex-start; }
 }
 
 /* Input con ícono */

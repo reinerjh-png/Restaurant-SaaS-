@@ -33,90 +33,94 @@ unset($_SESSION['login_error']);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css?v=<?= time() ?>">
 </head>
 <body>
 
-<div class="login-page">
-    <div class="login-box">
-
-        <!-- Logo -->
-        <div class="login-logo">
-            <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú Logo"
-                 style="max-height:80px; width:auto; object-fit:contain; margin:0 auto 8px;">
-            <div class="subtitle">Sistema de Gestión para Restaurantes · <strong>R.DEV</strong></div>
+<div class="split-layout">
+    <!-- Mitad Izquierda: Branding & Mensaje -->
+    <div class="split-left">
+        <div class="split-left-content">
+            <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú Logo" class="split-logo">
+            <h1 class="split-headline">Gestión Inteligente y Moderna para tu Restaurante</h1>
+            <p class="split-description">Optimiza tus operaciones, centraliza tus pedidos y acelera tus cobros en una plataforma diseñada para equipos de alto rendimiento.</p>
         </div>
+    </div>
 
-        <h1 class="login-title">Bienvenido de vuelta</h1>
-        <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
+    <!-- Mitad Derecha: Formulario de Login -->
+    <div class="split-right">
+        <div class="login-box-new">
+            
+            <h2 class="login-title">Bienvenido de vuelta</h2>
+            <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
 
-        <!-- Alerta de error -->
-        <?php if ($error): ?>
-        <div class="alert-error">
-            <i class="fa-solid fa-circle-xmark"></i>
-            <?= htmlspecialchars($error) ?>
-        </div>
-        <?php endif; ?>
-
-        <!-- Formulario -->
-        <form action="<?= BASE_URL ?>/auth/login.php" method="POST" id="form-login">
-
-            <div class="form-group">
-                <label class="form-label" for="email">
-                    <i class="fa-solid fa-user" style="margin-right:4px;color:var(--text-muted);font-size:.75rem;"></i>
-                    Usuario
-                </label>
-                <div class="input-icon-wrap">
-                    <span class="input-icon-left"><i class="fa-solid fa-at"></i></span>
-                    <input
-                        type="text"
-                        id="email"
-                        name="email"
-                        class="form-control"
-                        placeholder="Tu usuario o correo"
-                        required
-                        autocomplete="username"
-                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                    >
-                </div>
+            <!-- Alerta de error -->
+            <?php if ($error): ?>
+            <div class="alert-error">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <?= htmlspecialchars($error) ?>
             </div>
+            <?php endif; ?>
 
-            <div class="form-group">
-                <label class="form-label" for="password">
-                    <i class="fa-solid fa-lock" style="margin-right:4px;color:var(--text-muted);font-size:.75rem;"></i>
-                    Contraseña
-                </label>
-                <div class="input-icon-wrap">
-                    <span class="input-icon-left"><i class="fa-solid fa-lock"></i></span>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        class="form-control"
-                        placeholder="••••••••"
-                        required
-                        autocomplete="current-password"
-                        style="padding-right:44px;"
-                    >
-                    <button type="button" class="input-icon-right" id="toggle-pass"
-                            title="Mostrar/ocultar contraseña" aria-label="Mostrar contraseña">
-                        <i class="fa-solid fa-eye" id="toggle-pass-icon"></i>
-                    </button>
+            <!-- Formulario -->
+            <form action="<?= BASE_URL ?>/auth/login.php" method="POST" id="form-login">
+
+                <div class="form-group">
+                    <label class="form-label" for="email">
+                        <i class="fa-solid fa-user" style="margin-right:4px;color:var(--text-muted);font-size:.75rem;"></i>
+                        Usuario
+                    </label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon-left"><i class="fa-solid fa-at"></i></span>
+                        <input
+                            type="text"
+                            id="email"
+                            name="email"
+                            class="form-control"
+                            placeholder="Tu usuario o correo"
+                            required
+                            autocomplete="username"
+                            value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                        >
+                    </div>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <i class="fa-solid fa-lock" style="margin-right:4px;color:var(--text-muted);font-size:.75rem;"></i>
+                        Contraseña
+                    </label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon-left"><i class="fa-solid fa-lock"></i></span>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-control"
+                            placeholder="••••••••"
+                            required
+                            autocomplete="current-password"
+                            style="padding-right:44px;"
+                        >
+                        <button type="button" class="input-icon-right" id="toggle-pass"
+                                title="Mostrar/ocultar contraseña" aria-label="Mostrar contraseña">
+                            <i class="fa-solid fa-eye" id="toggle-pass-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primario btn-full btn-lg mt-16" id="btn-login"
+                        style="font-size:1rem; margin-top:24px;">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Ingresar al sistema
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Sistema desarrollado por <strong>Reiner Jiménez</strong> · R.DEV</p>
+                <p style="margin-top:4px;">© <?= date('Y') ?> · Todos los derechos reservados</p>
             </div>
-
-            <button type="submit" class="btn btn-primario btn-full btn-lg mt-16" id="btn-login"
-                    style="font-size:1rem; margin-top:24px;">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                Ingresar al sistema
-            </button>
-        </form>
-
-        <div class="login-footer">
-            <p>Desarrollado por <strong>Reiner Jiménez</strong> · R.DEV</p>
-            <p style="margin-top:2px;">© <?= date('Y') ?> · Todos los derechos reservados</p>
         </div>
-
     </div>
 </div>
 
