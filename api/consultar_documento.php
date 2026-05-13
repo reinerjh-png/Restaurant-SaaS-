@@ -68,13 +68,13 @@ $data = json_decode($body, true);
 
 if ($httpCode === 200 && $data) {
     if ($tipo === 'dni') {
-        $nombre = trim(
-            ($data['nombre'] ?? '') . ' ' .
-            ($data['apellidoPaterno'] ?? '') . ' ' .
-            ($data['apellidoMaterno'] ?? '')
-        );
-        if (empty(trim($nombre))) {
-            $nombre = $data['nombre'] ?? '';
+        $nombre = trim($data['nombre'] ?? '');
+        if (empty($nombre)) {
+            $nombre = trim(
+                ($data['nombres'] ?? '') . ' ' .
+                ($data['apellidoPaterno'] ?? '') . ' ' .
+                ($data['apellidoMaterno'] ?? '')
+            );
         }
         jsonResponse(true, [
             'tipo'             => 'dni',
@@ -88,10 +88,10 @@ if ($httpCode === 200 && $data) {
             'tipo'             => 'ruc',
             'numero_documento' => $data['numeroDocumento'] ?? $numero,
             'nombre'           => $razonSocial,
-            'direccion'        => $data['direccion'] ?? '',
-            'distrito'         => $data['distrito'] ?? '',
-            'provincia'        => $data['provincia'] ?? '',
-            'departamento'     => $data['departamento'] ?? '',
+            'direccion'        => (isset($data['direccion']) && $data['direccion'] !== '-') ? $data['direccion'] : '',
+            'distrito'         => (isset($data['distrito']) && $data['distrito'] !== '-') ? $data['distrito'] : '',
+            'provincia'        => (isset($data['provincia']) && $data['provincia'] !== '-') ? $data['provincia'] : '',
+            'departamento'     => (isset($data['departamento']) && $data['departamento'] !== '-') ? $data['departamento'] : '',
             'estado'           => $data['estado'] ?? '',
             'condicion'        => $data['condicion'] ?? '',
         ]);

@@ -4,6 +4,33 @@
 // Sistema SaaS Restaurante | R.DEV
 // ============================================
 
+/**
+ * Función nativa para cargar variables de entorno desde un archivo .env
+ * Compatible con hostings compartidos (no requiere Composer).
+ */
+function loadEnv($path) {
+    if (!file_exists($path)) return;
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value);
+            // Quitar comillas si las tiene
+            $value = trim($value, '"\'');
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                putenv(sprintf('%s=%s', $name, $value));
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+    }
+}
+
+// Cargar variables de entorno
+loadEnv(__DIR__ . '/../.env');
+
 // Detectar automáticamente la URL base (para localhost vs InfinityFree)
 $host = $_SERVER['HTTP_HOST'] ?? '';
 if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
@@ -12,15 +39,15 @@ if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false
     define('BASE_URL', '');
 }
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'restaurante_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
+define('DB_NAME', $_ENV['DB_NAME'] ?? 'restaurante_db');
+define('DB_USER', $_ENV['DB_USER'] ?? 'root');
+define('DB_PASS', $_ENV['DB_PASS'] ?? '');
+define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
 
 // ── Facturación — API de consulta DNI/RUC ─────────────────────
 // Obtén tu token en: https://api.apis.net.pe
-define('APIS_NET_TOKEN', '');  // <-- Pega aquí tu token
+define('APIS_NET_TOKEN', $_ENV['APIS_NET_TOKEN'] ?? '');
 
 /**
  * Retorna una instancia singleton de PDO.
