@@ -34,6 +34,8 @@ require_once '../../includes/header.php';
             <li><a href="usuarios.php" class="active"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
             <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
             <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
+            <li><a href="historial_comprobantes.php"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
+            <li><a href="config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-gear"></i></span> Facturación</a></li>
         </ul>
     </aside>
 

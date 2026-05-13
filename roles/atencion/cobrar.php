@@ -1,6 +1,6 @@
 <?php
 /**
- * roles/atencion/cobrar.php — Flujo de cobro con pago mixto
+ * roles/atencion/cobrar.php — Flujo de cobro con opción de comprobante
  * Sistema SaaS Restaurante | R.DEV
  */
 session_start();
@@ -45,7 +45,7 @@ $pageTitle = "Cobrar · $mesaLabel";
 require_once '../../includes/header.php';
 ?>
 
-<div style="max-width:560px;margin:0 auto;padding:16px;" class="page-content">
+<div style="max-width:580px;margin:0 auto;padding:16px;" class="page-content">
 
     <div class="d-flex align-center justify-between mb-16">
         <div>
@@ -96,6 +96,85 @@ require_once '../../includes/header.php';
         </div>
     </div>
 
+    <!-- ══ PASO 1: ¿Emitir comprobante? ══════════════════════════ -->
+    <div class="card mb-16" id="card-comprobante-opcion">
+        <div class="card-title"><i class="fa-solid fa-file-invoice"></i> ¿Desea emitir comprobante?</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <label id="opc-no-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('no')">
+                <input type="radio" name="tipo_comp" value="no" id="opc-no" style="display:none;" checked>
+                <div class="metodo-check" id="check-comp-no" style="background:var(--primary);"><i class="fa-solid fa-check"></i></div>
+                <i class="fa-solid fa-xmark" style="font-size:1.1rem;color:var(--text-secondary);"></i>
+                <span class="metodo-nombre">No, solo cobrar</span>
+            </label>
+            <label id="opc-boleta-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('boleta')">
+                <input type="radio" name="tipo_comp" value="boleta" id="opc-boleta" style="display:none;">
+                <div class="metodo-check" id="check-comp-boleta"><i class="fa-solid fa-check"></i></div>
+                <i class="fa-solid fa-receipt" style="font-size:1.1rem;color:var(--text-secondary);"></i>
+                <span class="metodo-nombre">Boleta de Venta <span style="font-size:.78rem;color:var(--text-muted);">(DNI)</span></span>
+            </label>
+            <label id="opc-factura-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('factura')">
+                <input type="radio" name="tipo_comp" value="factura" id="opc-factura" style="display:none;">
+                <div class="metodo-check" id="check-comp-factura"><i class="fa-solid fa-check"></i></div>
+                <i class="fa-solid fa-file-contract" style="font-size:1.1rem;color:var(--text-secondary);"></i>
+                <span class="metodo-nombre">Factura <span style="font-size:.78rem;color:var(--text-muted);">(RUC)</span></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- ══ PASO 2: Datos del cliente (DNI/RUC) ═══════════════════ -->
+    <div class="card mb-16" id="card-datos-cliente" style="display:none;">
+        <div class="card-title" id="titulo-datos-cliente"><i class="fa-solid fa-user"></i> Datos del cliente</div>
+
+        <div style="display:flex;gap:8px;margin-bottom:12px;" id="buscador-doc-wrap">
+            <div style="flex:1;">
+                <label class="form-label" id="label-nro-doc">Número de DNI</label>
+                <input type="text" id="input-nro-doc" class="form-control"
+                    placeholder="Ingresa el DNI..." maxlength="11" inputmode="numeric"
+                    oninput="this.value=this.value.replace(/\D/g,''); onDocumentoInput()">
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+                <button class="btn btn-ghost" id="btn-buscar-doc" onclick="buscarDocumento()" title="Consultar API" style="height:40px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Estado de búsqueda -->
+        <div id="doc-status" style="font-size:.82rem;min-height:20px;margin-bottom:8px;"></div>
+
+        <!-- Campos autocomplete -->
+        <div id="campos-cliente" style="display:none;">
+            <div class="mb-12">
+                <label class="form-label" id="label-nombre-cliente">Nombre completo</label>
+                <input type="text" id="input-nombre-cliente" class="form-control" placeholder="Nombre del cliente">
+            </div>
+            <div id="campos-factura-extra" style="display:none;">
+                <div class="mb-12">
+                    <label class="form-label">Dirección fiscal</label>
+                    <input type="text" id="input-direccion" class="form-control" placeholder="Dirección del cliente">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;" class="mb-12">
+                    <div>
+                        <label class="form-label">Distrito</label>
+                        <input type="text" id="input-distrito" class="form-control" placeholder="Distrito">
+                    </div>
+                    <div>
+                        <label class="form-label">Provincia</label>
+                        <input type="text" id="input-provincia" class="form-control" placeholder="Provincia">
+                    </div>
+                    <div>
+                        <label class="form-label">Departamento</label>
+                        <input type="text" id="input-departamento" class="form-control" placeholder="Dpto.">
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">
+                <i class="fa-solid fa-pencil"></i> Puedes editar los datos antes de continuar.
+            </div>
+        </div>
+
+    </div>
+
     <!-- Métodos de pago -->
     <div class="card mb-16">
         <div class="card-title"><i class="fa-solid fa-credit-card"></i> Método(s) de pago</div>
@@ -129,10 +208,8 @@ require_once '../../includes/header.php';
             <?php endforeach; ?>
         </div>
 
-        <!-- Diferencia -->
         <div class="diferencia-aviso" id="aviso-diferencia"></div>
 
-        <!-- Resumen de pago -->
         <div class="resumen-totales mt-12">
             <div class="resumen-row"><span>Total del pedido</span><span>S/ <?= number_format($total,2) ?></span></div>
             <div class="resumen-row"><span>Total asignado</span><span id="total-asignado">S/ 0.00</span></div>
@@ -159,6 +236,123 @@ const PEDIDO_ID    = <?= $pedidoId ?>;
 const METODOS      = ['efectivo','yape','transferencia','tarjeta','otro'];
 const activos      = new Set();
 
+// ── Selección de tipo de comprobante ──────────────────────────
+let tipoComp = 'no'; // 'no' | 'boleta' | 'factura'
+
+const OPCIONES_COMP = ['no', 'boleta', 'factura'];
+
+function seleccionarTipoComp(tipo) {
+    tipoComp = tipo;
+    OPCIONES_COMP.forEach(o => {
+        const label = document.getElementById(`opc-${o}-label`);
+        const check = document.getElementById(`check-comp-${o}`);
+        if (label) {
+            label.style.borderColor = o === tipo ? 'var(--primary)' : 'var(--border)';
+            label.style.background  = o === tipo ? 'var(--bg-secondary)' : '';
+        }
+        if (check) {
+            check.style.background = o === tipo ? 'var(--primary)' : '';
+        }
+    });
+
+    const cardCliente = document.getElementById('card-datos-cliente');
+    const camposFactura = document.getElementById('campos-factura-extra');
+    const labelNroDoc  = document.getElementById('label-nro-doc');
+    const inputDoc     = document.getElementById('input-nro-doc');
+
+    if (tipo === 'no') {
+        cardCliente.style.display = 'none';
+    } else {
+        cardCliente.style.display = '';
+        document.getElementById('titulo-datos-cliente').innerHTML =
+            `<i class="fa-solid fa-user"></i> Datos para ${tipo === 'boleta' ? 'Boleta (DNI)' : 'Factura (RUC)'}`;
+
+        if (tipo === 'boleta') {
+            labelNroDoc.textContent = 'Número de DNI (8 dígitos)';
+            inputDoc.placeholder    = 'Ingresa los 8 dígitos del DNI...';
+            inputDoc.maxLength      = 8;
+            if (camposFactura) camposFactura.style.display = 'none';
+        } else {
+            labelNroDoc.textContent = 'Número de RUC (11 dígitos)';
+            inputDoc.placeholder    = 'Ingresa los 11 dígitos del RUC...';
+            inputDoc.maxLength      = 11;
+            if (camposFactura) camposFactura.style.display = '';
+        }
+
+        // Reset campos
+        inputDoc.value = '';
+        limpiarCamposCliente();
+        document.getElementById('doc-status').innerHTML = '';
+        document.getElementById('campos-cliente').style.display = 'none';
+    }
+}
+
+// Init
+seleccionarTipoComp('no');
+
+// ── Autoconsulta de DNI/RUC ───────────────────────────────────
+let docTimer = null;
+function onDocumentoInput() {
+    const val  = document.getElementById('input-nro-doc').value.replace(/\D/g, '');
+    const need = tipoComp === 'boleta' ? 8 : 11;
+    clearTimeout(docTimer);
+    limpiarCamposCliente();
+    document.getElementById('campos-cliente').style.display = 'none';
+    document.getElementById('doc-status').innerHTML = '';
+
+    if (val.length === need) {
+        docTimer = setTimeout(buscarDocumento, 300);
+    }
+}
+
+async function buscarDocumento() {
+    const val  = document.getElementById('input-nro-doc').value.replace(/\D/g, '');
+    const tipo = tipoComp === 'boleta' ? 'dni' : 'ruc';
+    const need = tipoComp === 'boleta' ? 8 : 11;
+
+    if (val.length !== need) {
+        Toast.advertencia(`El ${tipo.toUpperCase()} debe tener ${need} dígitos.`);
+        return;
+    }
+
+    const status = document.getElementById('doc-status');
+    status.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Consultando...';
+
+    try {
+        const res  = await fetch(`${BASE_URL}/api/consultar_documento.php?tipo=${tipo}&numero=${val}`, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        });
+        const json = await res.json();
+
+        if (json.success && json.data) {
+            const d = json.data;
+            status.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Datos encontrados. Verifica antes de continuar.';
+            document.getElementById('input-nombre-cliente').value = d.nombre || '';
+
+            if (tipo === 'ruc') {
+                document.getElementById('input-direccion').value   = d.direccion    || '';
+                document.getElementById('input-distrito').value    = d.distrito     || '';
+                document.getElementById('input-provincia').value   = d.provincia    || '';
+                document.getElementById('input-departamento').value= d.departamento || '';
+            }
+            document.getElementById('campos-cliente').style.display = '';
+        } else {
+            // API falló o documento no encontrado → permitir ingreso manual
+            status.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i> ${json.message || 'No encontrado.'} Ingresa los datos manualmente.`;
+            document.getElementById('campos-cliente').style.display = '';
+        }
+    } catch(e) {
+        status.innerHTML = '<i class="fa-solid fa-wifi" style="color:var(--danger);"></i> Sin conexión a la API. Ingresa los datos manualmente.';
+        document.getElementById('campos-cliente').style.display = '';
+    }
+}
+
+function limpiarCamposCliente() {
+    ['input-nombre-cliente','input-direccion','input-distrito','input-provincia','input-departamento']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+}
+
+// ── Métodos de pago ──────────────────────────────────────────
 function toggleMetodo(key) {
     const el = document.getElementById(`metodo-${key}`);
     if (activos.has(key)) {
@@ -195,9 +389,11 @@ function calcularDiferencia() {
     }
 }
 
+// ── Confirmar cobro ──────────────────────────────────────────
 async function confirmarCobro() {
     if (activos.size === 0) { Toast.advertencia('Selecciona al menos un método de pago'); return; }
 
+    // Armar array de pagos
     const pagos = [];
     for (const key of activos) {
         const monto = parseFloat(document.getElementById(`monto-${key}`).value || 0);
@@ -214,24 +410,88 @@ async function confirmarCobro() {
         if (!ok) return;
     }
 
+    // Validar datos de comprobante si aplica
+    let clienteData = null;
+    if (tipoComp !== 'no') {
+        const numDoc       = document.getElementById('input-nro-doc').value.trim().replace(/\D/g,'');
+        const nombreCliente= document.getElementById('input-nombre-cliente')?.value.trim() || '';
+        const tipoDoc      = tipoComp === 'boleta' ? 'dni' : 'ruc';
+        const need         = tipoComp === 'boleta' ? 8 : 11;
+
+        if (numDoc.length !== need) {
+            Toast.advertencia(`El ${tipoDoc.toUpperCase()} debe tener ${need} dígitos.`);
+            return;
+        }
+        if (!nombreCliente) {
+            Toast.advertencia('Ingresa el nombre del cliente.');
+            return;
+        }
+        clienteData = {
+            tipo_documento:  tipoDoc,
+            numero_documento: numDoc,
+            nombre_cliente:   nombreCliente,
+            direccion:        document.getElementById('input-direccion')?.value.trim()    || '',
+            distrito:         document.getElementById('input-distrito')?.value.trim()     || '',
+            provincia:        document.getElementById('input-provincia')?.value.trim()    || '',
+            departamento:     document.getElementById('input-departamento')?.value.trim() || '',
+        };
+    }
+
     const btn = document.getElementById('btn-confirmar-cobro');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
 
     try {
-        const res  = await fetch(BASE_URL + '/api/cobrar_pedido.php', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
-            body: JSON.stringify({ pedido_id: PEDIDO_ID, pagos, notas: document.getElementById('notas-cobro').value })
-        });
-        const json = await res.json();
-        if (json.success) {
-            Toast.exito('¡Cobro registrado exitosamente!');
-            setTimeout(() => { window.location.href = BASE_URL + '/roles/atencion/dashboard.php'; }, 1200);
+        let comprobanteId = null;
+
+        if (tipoComp !== 'no' && clienteData) {
+            // ── Ruta con comprobante ─────────────────────────────────
+            const body = {
+                pedido_id: PEDIDO_ID,
+                tipo:      tipoComp,
+                pagos,
+                notas: document.getElementById('notas-cobro').value,
+                ...clienteData,
+            };
+
+            const res  = await fetch(BASE_URL + '/api/guardar_comprobante.php', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+                body: JSON.stringify(body)
+            });
+            const json = await res.json();
+
+            if (json.success) {
+                Toast.exito(`¡${json.message || 'Cobro registrado!'} · ${json.data?.numero_comprobante || ''}`);
+                comprobanteId = json.data?.comprobante_id;
+                setTimeout(() => {
+                    if (comprobanteId) {
+                        window.location.href = `${BASE_URL}/roles/atencion/comprobante_view.php?id=${comprobanteId}`;
+                    } else {
+                        window.location.href = `${BASE_URL}/roles/atencion/dashboard.php`;
+                    }
+                }, 1200);
+            } else {
+                Toast.error(json.message || 'Error al procesar el cobro.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar cobro';
+            }
         } else {
-            Toast.error(json.message);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar cobro';
+            // ── Ruta sin comprobante (flujo original) ────────────────
+            const res  = await fetch(BASE_URL + '/api/cobrar_pedido.php', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+                body: JSON.stringify({ pedido_id: PEDIDO_ID, pagos, notas: document.getElementById('notas-cobro').value })
+            });
+            const json = await res.json();
+            if (json.success) {
+                Toast.exito('¡Cobro registrado exitosamente!');
+                setTimeout(() => { window.location.href = BASE_URL + '/roles/atencion/dashboard.php'; }, 1200);
+            } else {
+                Toast.error(json.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirmar cobro';
+            }
         }
     } catch(e) {
         Toast.error('Error de conexión');

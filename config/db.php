@@ -18,6 +18,10 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
+// ── Facturación — API de consulta DNI/RUC ─────────────────────
+// Obtén tu token en: https://api.apis.net.pe
+define('APIS_NET_TOKEN', '');  // <-- Pega aquí tu token
+
 /**
  * Retorna una instancia singleton de PDO.
  */
