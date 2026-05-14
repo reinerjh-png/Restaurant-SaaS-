@@ -18,7 +18,7 @@ $db = getDB();
 $st = $db->prepare("
     SELECT c.*, u.nombre AS cajero_nombre,
            fc.ruc AS rest_ruc, fc.razon_social AS rest_razon, fc.direccion_fiscal AS rest_dir,
-           fc.pie_mensaje, fc.logo AS rest_logo
+           fc.telefono AS rest_tel, fc.pie_mensaje, fc.logo AS rest_logo
     FROM comprobantes c
     JOIN usuarios u ON u.id = c.usuario_id
     LEFT JOIN facturacion_config fc ON fc.restaurante_id = c.restaurante_id
@@ -104,6 +104,9 @@ require_once '../../includes/header.php';
             <?php endif; ?>
             <?php if ($comp['rest_dir']): ?>
             <div style="font-size:11px;color:#555;"><?= htmlspecialchars($comp['rest_dir']) ?></div>
+            <?php endif; ?>
+            <?php if (!empty($comp['rest_tel'])): ?>
+            <div style="font-size:11px;color:#555;">Tel: <?= htmlspecialchars($comp['rest_tel']) ?></div>
             <?php endif; ?>
         </div>
 

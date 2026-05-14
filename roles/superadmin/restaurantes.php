@@ -34,6 +34,7 @@ require_once '../../includes/header.php';
         <ul class="sidebar-menu">
             <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
             <li><a href="restaurantes.php" class="active"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
+            <li><a href="perfil.php"><span class="menu-icon"><i class="fa-solid fa-user-shield"></i></span> Mi Perfil</a></li>
         </ul>
     </aside>
 

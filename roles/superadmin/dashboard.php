@@ -57,6 +57,7 @@ require_once '../../includes/header.php';
         <ul class="sidebar-menu">
             <li><a href="dashboard.php" class="active"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
             <li><a href="restaurantes.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
+            <li><a href="perfil.php"><span class="menu-icon"><i class="fa-solid fa-user-shield"></i></span> Mi Perfil</a></li>
         </ul>
         <div style="padding:16px 20px;border-top:1px solid var(--border);margin-top:auto;">
             <div style="font-size:.71rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Acceso rápido</div>

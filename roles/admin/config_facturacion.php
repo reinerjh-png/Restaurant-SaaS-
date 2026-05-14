@@ -1,7 +1,7 @@
 <?php
 /**
  * roles/admin/config_facturacion.php
- * Configuración de datos de facturación del restaurante.
+ * Configuración de identidad de marca y datos de facturación del restaurante.
  * Sistema SaaS Restaurante | R.DEV
  */
 session_start();
@@ -16,12 +16,14 @@ $saved = false;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $ruc          = preg_replace('/\D/', '', trim($_POST['ruc']          ?? ''));
-    $razonSocial  = trim($_POST['razon_social']   ?? '');
-    $direccion    = trim($_POST['direccion_fiscal']?? '');
-    $serieBoleta  = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_boleta']  ?? 'B001')));
-    $serieFactura = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_factura'] ?? 'F001')));
-    $pieMensaje   = trim($_POST['pie_mensaje'] ?? '');
+    $ruc             = preg_replace('/\D/', '', trim($_POST['ruc']              ?? ''));
+    $razonSocial     = trim($_POST['razon_social']     ?? '');
+    $nombreComercial = trim($_POST['nombre_comercial'] ?? '');
+    $direccion       = trim($_POST['direccion_fiscal'] ?? '');
+    $telefono        = trim($_POST['telefono']         ?? '');
+    $serieBoleta     = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_boleta']  ?? 'B001')));
+    $serieFactura    = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_factura'] ?? 'F001')));
+    $pieMensaje      = trim($_POST['pie_mensaje'] ?? '');
 
     if ($ruc && strlen($ruc) !== 11) {
         $error = 'El RUC del restaurante debe tener exactamente 11 dígitos.';
@@ -45,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$error) {
-            // Obtener config actual (para correlativo)
+            // Obtener config actual (para correlativo y logo)
             $stCurrent = $db->prepare("SELECT correlativo_boleta, correlativo_factura, logo FROM facturacion_config WHERE restaurante_id = ?");
             $stCurrent->execute([$restauranteId]);
             $current = $stCurrent->fetch();
@@ -54,19 +56,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $finalLogo = $logoPath ?? $current['logo'];
                 $st = $db->prepare("
                     UPDATE facturacion_config
-                    SET ruc = ?, razon_social = ?, direccion_fiscal = ?,
+                    SET ruc = ?, razon_social = ?, nombre_comercial = ?,
+                        direccion_fiscal = ?, telefono = ?,
                         serie_boleta = ?, serie_factura = ?,
                         pie_mensaje = ?, logo = ?
                     WHERE restaurante_id = ?
                 ");
-                $st->execute([$ruc ?: null, $razonSocial, $direccion, $serieBoleta, $serieFactura, $pieMensaje, $finalLogo, $restauranteId]);
+                $st->execute([
+                    $ruc ?: null, $razonSocial, $nombreComercial ?: null,
+                    $direccion, $telefono ?: null,
+                    $serieBoleta, $serieFactura,
+                    $pieMensaje, $finalLogo,
+                    $restauranteId
+                ]);
             } else {
                 $st = $db->prepare("
                     INSERT INTO facturacion_config
-                        (restaurante_id, ruc, razon_social, direccion_fiscal, serie_boleta, serie_factura, pie_mensaje, logo)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        (restaurante_id, ruc, razon_social, nombre_comercial,
+                         direccion_fiscal, telefono, serie_boleta, serie_factura, pie_mensaje, logo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $st->execute([$restauranteId, $ruc ?: null, $razonSocial, $direccion, $serieBoleta, $serieFactura, $pieMensaje, $logoPath]);
+                $st->execute([
+                    $restauranteId, $ruc ?: null, $razonSocial, $nombreComercial ?: null,
+                    $direccion, $telefono ?: null,
+                    $serieBoleta, $serieFactura, $pieMensaje, $logoPath
+                ]);
             }
             $saved = true;
         }
@@ -78,7 +92,12 @@ $stCfg = $db->prepare("SELECT * FROM facturacion_config WHERE restaurante_id = ?
 $stCfg->execute([$restauranteId]);
 $cfg = $stCfg->fetch() ?: [];
 
-$pageTitle  = 'Configuración de Facturación';
+// Leer nombre del restaurante desde la tabla restaurantes
+$stRest = $db->prepare("SELECT nombre FROM restaurantes WHERE id = ?");
+$stRest->execute([$restauranteId]);
+$restaurante = $stRest->fetch();
+
+$pageTitle  = 'Identidad de Marca';
 $activeMenu = 'facturacion';
 require_once '../../includes/header.php';
 ?>
@@ -94,8 +113,8 @@ require_once '../../includes/header.php';
             <li><a href="usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
             <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
             <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
-            <li><a href="historial_comprobantes.php" class="<?= $activeMenu === 'comprobantes' ? 'active' : '' ?>"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
-            <li><a href="config_facturacion.php" class="active"><span class="menu-icon"><i class="fa-solid fa-gear"></i></span> Facturación</a></li>
+            <li><a href="historial_comprobantes.php"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
+            <li><a href="config_facturacion.php" class="active"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Mi Restaurante</a></li>
         </ul>
     </aside>
 
@@ -104,8 +123,8 @@ require_once '../../includes/header.php';
 
             <div class="d-flex align-center justify-between mb-24">
                 <div>
-                    <h1><i class="fa-solid fa-gear" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Configuración de Facturación</h1>
-                    <p>Datos del restaurante para boletas y facturas</p>
+                    <h1><i class="fa-solid fa-store" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Identidad de Marca</h1>
+                    <p>Configura el branding y los datos legales de tu restaurante</p>
                 </div>
                 <a href="historial_comprobantes.php" class="btn btn-ghost btn-sm">
                     <i class="fa-solid fa-file-invoice"></i> Ver comprobantes
@@ -125,13 +144,70 @@ require_once '../../includes/header.php';
 
             <form method="POST" enctype="multipart/form-data">
 
-                <!-- Datos del restaurante -->
+                <!-- ══ SECCIÓN 1: IDENTIDAD VISUAL ══════════════════════════ -->
                 <div class="card mb-20">
-                    <div class="card-title"><i class="fa-solid fa-building"></i> Datos del restaurante</div>
+                    <div class="card-title"><i class="fa-solid fa-palette"></i> Identidad Visual</div>
+                    <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:16px;">
+                        El logo y nombre comercial aparecerán en la barra superior del sistema y en todos los comprobantes emitidos.
+                    </p>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="mb-16">
+                        <!-- Vista previa del logo actual -->
+                        <div>
+                            <label class="form-label">Logo del restaurante <span style="font-weight:400;font-size:.8rem;color:var(--text-secondary);">(JPG, PNG, WebP, SVG)</span></label>
+                            <input type="file" name="logo" id="logo-input" class="form-control" accept="image/*" onchange="previsualizarLogo(this)">
+                            <div style="margin-top:12px;display:flex;align-items:center;gap:12px;">
+                                <?php
+                                $logoActual = $cfg['logo'] ?? null;
+                                $logoDisplay = ($logoActual && file_exists($_SERVER['DOCUMENT_ROOT'] . $logoActual))
+                                    ? htmlspecialchars($logoActual)
+                                    : BASE_URL . '/assets/logo.png';
+                                ?>
+                                <div id="logo-preview-box" style="width:80px;height:80px;border-radius:var(--radius-md);border:2px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);">
+                                    <img id="logo-preview" src="<?= $logoDisplay ?>" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">
+                                </div>
+                                <div>
+                                    <?php if ($logoActual): ?>
+                                    <div style="font-size:.78rem;color:var(--success);font-weight:600;margin-bottom:4px;"><i class="fa-solid fa-circle-check"></i> Logo configurado</div>
+                                    <?php else: ?>
+                                    <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:4px;">Usando logo del sistema</div>
+                                    <?php endif; ?>
+                                    <div style="font-size:.72rem;color:var(--text-secondary);">Recomendado: fondo transparente (PNG/SVG), mín. 200×200px</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nombre comercial -->
+                        <div>
+                            <label class="form-label">Nombre comercial</label>
+                            <input type="text" name="nombre_comercial" class="form-control"
+                                value="<?= htmlspecialchars($cfg['nombre_comercial'] ?? '') ?>"
+                                placeholder="Ej: Sabor Amazónico">
+                            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">
+                                Nombre visible en el dashboard y encabezado del sistema. Si lo dejas vacío, se usa «<?= htmlspecialchars($restaurante['nombre'] ?? 'Restaurante') ?>».
+                            </div>
+
+                            <div style="margin-top:16px;">
+                                <label class="form-label">Mensaje de pie de comprobante</label>
+                                <textarea name="pie_mensaje" class="form-control" rows="3"
+                                    placeholder="¡Gracias por su visita! Vuelva pronto 😊"
+                                    maxlength="300"><?= htmlspecialchars($cfg['pie_mensaje'] ?? '¡Gracias por su visita!') ?></textarea>
+                                <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">Aparecerá al pie de todas las boletas y facturas.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ SECCIÓN 2: DATOS LEGALES (SUNAT) ══════════════════════ -->
+                <div class="card mb-20">
+                    <div class="card-title"><i class="fa-solid fa-building-columns"></i> Datos Legales — SUNAT</div>
+                    <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:16px;">
+                        Requeridos para que las boletas y facturas sean válidas según la normativa de SUNAT Perú.
+                    </p>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="mb-16">
                         <div>
-                            <label class="form-label">RUC del restaurante</label>
+                            <label class="form-label">RUC del restaurante <span style="color:var(--danger);">*</span></label>
                             <input type="text" name="ruc" class="form-control"
                                 value="<?= htmlspecialchars($cfg['ruc'] ?? '') ?>"
                                 placeholder="20123456789" maxlength="11"
@@ -140,35 +216,37 @@ require_once '../../includes/header.php';
                             <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">11 dígitos. Requerido para emitir facturas.</div>
                         </div>
                         <div>
-                            <label class="form-label">Razón social</label>
+                            <label class="form-label">Razón social <span style="color:var(--danger);">*</span></label>
                             <input type="text" name="razon_social" class="form-control"
                                 value="<?= htmlspecialchars($cfg['razon_social'] ?? '') ?>"
                                 placeholder="RESTAURANTE SABOR PERU S.A.C.">
+                            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">Nombre legal registrado en SUNAT.</div>
                         </div>
                     </div>
 
                     <div class="mb-16">
-                        <label class="form-label">Dirección fiscal</label>
+                        <label class="form-label">Dirección fiscal <span style="color:var(--danger);">*</span></label>
                         <input type="text" name="direccion_fiscal" class="form-control"
                             value="<?= htmlspecialchars($cfg['direccion_fiscal'] ?? '') ?>"
                             placeholder="Av. Los Álamos 123, Tarapoto, San Martín">
                     </div>
 
                     <div>
-                        <label class="form-label">Logo del restaurante <span style="font-weight:400;font-size:.8rem;color:var(--text-secondary);">(JPG, PNG, WebP — se mostrará en comprobantes)</span></label>
-                        <input type="file" name="logo" class="form-control" accept="image/*">
-                        <?php if (!empty($cfg['logo'])): ?>
-                        <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
-                            <img src="<?= htmlspecialchars($cfg['logo']) ?>" alt="Logo actual" style="max-height:48px;max-width:120px;object-fit:contain;border-radius:4px;border:1px solid var(--border);">
-                            <span style="font-size:.78rem;color:var(--text-secondary);">Logo actual</span>
-                        </div>
-                        <?php endif; ?>
+                        <label class="form-label">Teléfono de contacto</label>
+                        <input type="text" name="telefono" class="form-control"
+                            value="<?= htmlspecialchars($cfg['telefono'] ?? '') ?>"
+                            placeholder="042 123456 / 999 888 777"
+                            maxlength="20">
+                        <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">Opcional. Aparecerá en los comprobantes emitidos.</div>
                     </div>
                 </div>
 
-                <!-- Series de comprobantes -->
+                <!-- ══ SECCIÓN 3: SERIES DE COMPROBANTES ══════════════════════ -->
                 <div class="card mb-20">
                     <div class="card-title"><i class="fa-solid fa-hashtag"></i> Series de comprobantes</div>
+                    <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:16px;">
+                        La serie identifica el punto de emisión. No cambies la serie si ya tienes comprobantes emitidos.
+                    </p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                         <div>
                             <label class="form-label">Serie de Boleta</label>
@@ -193,36 +271,6 @@ require_once '../../includes/header.php';
                     </div>
                 </div>
 
-                <!-- Mensaje de pie -->
-                <div class="card mb-20">
-                    <div class="card-title"><i class="fa-solid fa-comment-dots"></i> Mensaje de pie de comprobante</div>
-                    <textarea name="pie_mensaje" class="form-control" rows="2"
-                        placeholder="¡Gracias por su visita! Vuelva pronto 😊"
-                        maxlength="300"><?= htmlspecialchars($cfg['pie_mensaje'] ?? '¡Gracias por su visita!') ?></textarea>
-                    <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">Aparecerá al pie de todas las boletas y facturas.</div>
-                </div>
-
-                <!-- Configuración de API -->
-                <div class="card mb-20" style="border-left:3px solid var(--warning);">
-                    <div class="card-title"><i class="fa-solid fa-key"></i> Token API (DNI/RUC lookup)</div>
-                    <div style="font-size:.875rem;color:var(--text-secondary);margin-bottom:12px;">
-                        El token de <strong>api.apis.net.pe</strong> se configura directamente en
-                        <code style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px;font-size:.8rem;">config/db.php</code>
-                        como la constante <code style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px;font-size:.8rem;">APIS_NET_TOKEN</code>.
-                        <br><br>
-                        Ejemplo:<br>
-                        <code style="background:var(--bg-secondary);padding:6px 10px;border-radius:6px;font-size:.8rem;display:block;margin-top:6px;">define('APIS_NET_TOKEN', 'apis-token-xxxxx');</code>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:.82rem;">
-                        <?php if (defined('APIS_NET_TOKEN') && !empty(APIS_NET_TOKEN)): ?>
-                        <i class="fa-solid fa-circle-check" style="color:var(--success);"></i>
-                        <span style="color:var(--success);font-weight:600;">Token configurado correctamente.</span>
-                        <?php else: ?>
-                        <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i>
-                        <span style="color:var(--warning);font-weight:600;">Token no configurado. La consulta automática de DNI/RUC no funcionará, pero el cobro manual sí.</span>
-                        <?php endif; ?>
-                    </div>
-                </div>
 
                 <button type="submit" class="btn btn-primario btn-lg">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar configuración
@@ -233,5 +281,17 @@ require_once '../../includes/header.php';
         </div>
     </div>
 </div>
+
+<script>
+function previsualizarLogo(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('logo-preview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 
 <?php require_once '../../includes/footer.php'; ?>

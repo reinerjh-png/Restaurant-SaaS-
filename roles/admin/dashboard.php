@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * roles/admin/dashboard.php — Panel del Administrador
  * Sistema SaaS Restaurante | R.DEV
@@ -71,9 +71,20 @@ $stUltimos = $db->prepare("
 $stUltimos->execute([$restauranteId]);
 $ultimosPedidos = $stUltimos->fetchAll();
 
-$stRest = $db->prepare("SELECT nombre FROM restaurantes WHERE id = ?");
+$stRest = $db->prepare("
+    SELECT r.nombre,
+           fc.logo, fc.nombre_comercial, fc.ruc, fc.direccion_fiscal, fc.telefono
+    FROM restaurantes r
+    LEFT JOIN facturacion_config fc ON fc.restaurante_id = r.id
+    WHERE r.id = ?
+");
 $stRest->execute([$restauranteId]);
 $restaurante = $stRest->fetch();
+
+// Nombre a mostrar: nombre_comercial > nombre del restaurante
+$nombreMostrar = !empty($restaurante['nombre_comercial'])
+    ? $restaurante['nombre_comercial']
+    : ($restaurante['nombre'] ?? 'Restaurante');
 
 $pageTitle = 'Dashboard';
 $activeMenu = 'dashboard';
@@ -91,7 +102,7 @@ require_once '../../includes/header.php';
             <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
             <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
             <li><a href="historial_comprobantes.php"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
-            <li><a href="config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-gear"></i></span> Facturación</a></li>
+            <li><a href="config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Mi Restaurante</a></li>
         </ul>
     </aside>
 
@@ -99,13 +110,40 @@ require_once '../../includes/header.php';
     <div class="main-content">
         <div class="page-content">
 
-            <!-- Encabezado -->
+            <!-- Encabezado con Branding -->
             <div class="d-flex align-center justify-between mb-24">
-                <div>
-                    <h1><i class="fa-solid fa-chart-bar" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Dashboard</h1>
-                    <p><?= htmlspecialchars($restaurante['nombre'] ?? 'Restaurante') ?> · <?= date('d/m/Y') ?></p>
+                <div class="d-flex align-center" style="gap:16px;">
+                    <?php
+                    $logoPath = $restaurante['logo'] ?? null;
+                    $logoSrc  = ($logoPath && file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath))
+                        ? htmlspecialchars($logoPath)
+                        : BASE_URL . '/assets/logo.png';
+                    ?>
+                    <div style="width:56px;height:56px;border-radius:var(--radius-md);overflow:hidden;
+                                border:2px solid var(--border);background:var(--bg-secondary);
+                                display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <img src="<?= $logoSrc ?>" alt="Logo"
+                             style="max-width:100%;max-height:100%;object-fit:contain;">
+                    </div>
+                    <div>
+                        <h1 style="margin-bottom:2px;"><?= htmlspecialchars($nombreMostrar) ?></h1>
+                        <p style="margin:0;">
+                            <?php if (!empty($restaurante['ruc'])): ?>
+                                <span style="font-size:.78rem;">RUC <?= htmlspecialchars($restaurante['ruc']) ?></span>
+                                <span style="color:var(--border);margin:0 4px;">·</span>
+                            <?php endif; ?>
+                            <span style="font-size:.78rem;"><?= date('d/m/Y') ?></span>
+                            <?php if (!empty($restaurante['telefono'])): ?>
+                                <span style="color:var(--border);margin:0 4px;">·</span>
+                                <span style="font-size:.78rem;"><i class="fa-solid fa-phone" style="font-size:.7rem;"></i> <?= htmlspecialchars($restaurante['telefono']) ?></span>
+                            <?php endif; ?>
+                        </p>
+                    </div>
                 </div>
                 <div class="d-flex gap-8">
+                    <a href="config_facturacion.php" class="btn btn-ghost btn-sm">
+                        <i class="fa-solid fa-store"></i> Mi Restaurante
+                    </a>
                     <a href="reportes.php" class="btn btn-ghost btn-sm">
                         <i class="fa-solid fa-chart-line"></i> Ver reportes
                     </a>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * roles/admin/ver_comprobante.php
  * Vista detallada de un comprobante desde el panel admin.
@@ -20,7 +20,7 @@ $st = $db->prepare("
            pe.tipo AS pedido_tipo,
            m.numero AS mesa_numero,
            fc.ruc AS rest_ruc, fc.razon_social AS rest_razon, fc.direccion_fiscal AS rest_dir,
-           fc.pie_mensaje, fc.logo AS rest_logo
+           fc.telefono AS rest_tel, fc.pie_mensaje, fc.logo AS rest_logo
     FROM comprobantes c
     JOIN usuarios u ON u.id = c.usuario_id
     JOIN pedidos pe ON pe.id = c.pedido_id
@@ -74,7 +74,7 @@ require_once '../../includes/header.php';
             <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
             <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
             <li><a href="historial_comprobantes.php" class="active"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
-            <li><a href="config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-gear"></i></span> Facturación</a></li>
+            <li><a href="config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Mi Restaurante</a></li>
         </ul>
     </aside>
 
@@ -136,6 +136,9 @@ require_once '../../includes/header.php';
                     <?php endif; ?>
                     <?php if ($comp['rest_dir']): ?>
                     <div style="font-size:11px;color:#555;"><?= htmlspecialchars($comp['rest_dir']) ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($comp['rest_tel'])): ?>
+                    <div style="font-size:11px;color:#555;">Tel: <?= htmlspecialchars($comp['rest_tel']) ?></div>
                     <?php endif; ?>
                 </div>
 

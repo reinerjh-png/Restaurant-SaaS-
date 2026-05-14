@@ -17,6 +17,36 @@ $nombreInicial = strtoupper(substr($_SESSION['nombre'] ?? 'U', 0, 1));
 
 // Prefijo de ruta según rol
 $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
+
+// ── Branding dinámico por restaurante ──────────────────────────
+// Para roles no-superadmin que tienen restaurante_id, cargar su branding
+$_brandingLogo   = BASE_URL . '/assets/logo.png'; // fallback genérico
+$_brandingNombre = 'R.DEV';                        // fallback genérico
+if (!empty($_SESSION['restaurante_id']) && $_SESSION['rol'] !== 'superadmin') {
+    // Usar conexión ya existente si está disponible, si no abrir una nueva
+    try {
+        $_dbB = getDB();
+        $_stB = $_dbB->prepare("
+            SELECT fc.logo, fc.nombre_comercial, r.nombre
+            FROM restaurantes r
+            LEFT JOIN facturacion_config fc ON fc.restaurante_id = r.id
+            WHERE r.id = ?
+        ");
+        $_stB->execute([$_SESSION['restaurante_id']]);
+        $_brand = $_stB->fetch();
+        if ($_brand) {
+            // Logo: usar el de facturacion_config si existe y el archivo está en disco
+            $__logo = $_brand['logo'] ?? null;
+            if ($__logo && file_exists($_SERVER['DOCUMENT_ROOT'] . $__logo)) {
+                $_brandingLogo = htmlspecialchars($__logo);
+            }
+            // Nombre: nombre_comercial tiene prioridad sobre nombre del restaurante
+            $_brandingNombre = htmlspecialchars(
+                !empty($_brand['nombre_comercial']) ? $_brand['nombre_comercial'] : $_brand['nombre']
+            );
+        }
+    } catch (Exception $_eB) { /* silencioso — usa fallback */ }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -39,7 +69,17 @@ $baseRol = BASE_URL . '/roles/' . $_SESSION['rol'];
 <!-- Navbar principal -->
 <nav class="navbar">
     <div class="navbar-brand">
-        <img src="<?= BASE_URL ?>/assets/logo.png" alt="Sabor Perú" style="height: 32px; width: auto;">
+        <?php if ($_SESSION['rol'] === 'superadmin'): ?>
+            <img src="<?= BASE_URL ?>/assets/logo.png" alt="R.DEV" style="height:32px;width:auto;">
+        <?php else: ?>
+            <img src="<?= $_brandingLogo ?>" alt="<?= $_brandingNombre ?>"
+                 style="height:36px;width:auto;max-width:120px;object-fit:contain;border-radius:4px;">
+            <span style="font-size:.82rem;font-weight:700;color:rgba(255,255,255,.92);margin-left:8px;
+                         max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+                         letter-spacing:.01em;">
+                <?= $_brandingNombre ?>
+            </span>
+        <?php endif; ?>
     </div>
     <div class="navbar-right">
         <?php if (($_SESSION['rol'] ?? '') === 'superadmin' && strpos($_SERVER['REQUEST_URI'] ?? '', '/roles/admin/') !== false): ?>
