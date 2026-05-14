@@ -15,7 +15,8 @@ $db = getDB();
 // (evita mostrar pedidos vacíos en cocina antes de que atención los envíe)
 $stPedidos = $db->prepare("
     SELECT pe.id, pe.tipo, pe.total, pe.created_at,
-           m.numero AS mesa_numero
+           m.numero AS mesa_numero,
+           TIMESTAMPDIFF(MINUTE, pe.created_at, NOW()) AS minutos_transcurridos
     FROM pedidos pe
     LEFT JOIN mesas m ON m.id = pe.mesa_id
     WHERE pe.restaurante_id = ? AND pe.estado = 'activo'

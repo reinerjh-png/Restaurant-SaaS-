@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/historial_comprobantes.php
  * Historial de comprobantes con filtros, búsqueda y anulación.
@@ -69,6 +69,56 @@ $activeMenu = 'comprobantes';
 require_once '../../includes/header.php';
 ?>
 
+<style>
+/* Estilos responsive para Historial de Comprobantes */
+.head-comprobantes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.stats-comprobantes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.filtros-comprobantes {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1.5fr auto;
+    gap: 12px;
+    align-items: end;
+}
+@media (max-width: 1024px) {
+    .stats-comprobantes {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .filtros-comprobantes {
+        grid-template-columns: 1fr 1fr;
+    }
+    .filtros-comprobantes .btn-filtro {
+        grid-column: span 2;
+    }
+}
+@media (max-width: 600px) {
+    .head-comprobantes {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .stats-comprobantes {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    .filtros-comprobantes {
+        grid-template-columns: 1fr;
+    }
+    .filtros-comprobantes .btn-filtro {
+        grid-column: 1;
+    }
+}
+</style>
+
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
@@ -87,7 +137,7 @@ require_once '../../includes/header.php';
     <div class="main-content">
         <div class="page-content">
 
-            <div class="d-flex align-center justify-between mb-20">
+            <div class="head-comprobantes">
                 <div>
                     <h1><i class="fa-solid fa-file-invoice" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Comprobantes</h1>
                     <p>Boletas y facturas emitidas</p>
@@ -98,7 +148,7 @@ require_once '../../includes/header.php';
             </div>
 
             <!-- Estadísticas rápidas -->
-            <div class="stats-grid mb-20" style="grid-template-columns:repeat(4,1fr);">
+            <div class="stats-comprobantes">
                 <div class="stat-card verde">
                     <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div class="stat-valor">S/ <?= number_format($totales['total_monto'], 2) ?></div>
@@ -123,7 +173,7 @@ require_once '../../includes/header.php';
 
             <!-- Filtros -->
             <div class="card mb-20">
-                <form method="GET" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;">
+                <form method="GET" class="filtros-comprobantes">
                     <div>
                         <label class="form-label">Desde</label>
                         <input type="date" name="desde" class="form-control" value="<?= htmlspecialchars($fechaDesde) ?>">
@@ -144,7 +194,7 @@ require_once '../../includes/header.php';
                         <label class="form-label">DNI / RUC cliente</label>
                         <input type="text" name="doc" class="form-control" value="<?= htmlspecialchars($busqDoc) ?>" placeholder="Buscar por documento...">
                     </div>
-                    <button type="submit" class="btn btn-primario" style="height:40px;">
+                    <button type="submit" class="btn btn-primario btn-filtro" style="height:40px;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                 </form>

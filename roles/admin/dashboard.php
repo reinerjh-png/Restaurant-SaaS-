@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/dashboard.php — Panel del Administrador
  * Sistema SaaS Restaurante | R.DEV
@@ -91,6 +91,73 @@ $activeMenu = 'dashboard';
 require_once '../../includes/header.php';
 ?>
 
+<style>
+/* Estilos responsive para el Dashboard */
+.head-dashboard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.head-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.head-brand-info h1 {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    line-height: 1.2;
+}
+.head-brand-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    align-items: center;
+}
+.head-brand-meta span {
+    display: flex;
+    align-items: center;
+}
+.head-actions {
+    display: flex;
+    gap: 8px;
+}
+.dashboard-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .head-dashboard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .head-brand {
+        width: 100%;
+    }
+    .head-brand-info h1 {
+        font-size: 1.35rem;
+    }
+    .head-actions {
+        width: 100%;
+    }
+    .head-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+    .dashboard-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
 <div class="layout-admin">
     <aside class="sidebar">
         <ul class="sidebar-menu">
@@ -111,36 +178,33 @@ require_once '../../includes/header.php';
         <div class="page-content">
 
             <!-- Encabezado con Branding -->
-            <div class="d-flex align-center justify-between mb-24">
-                <div class="d-flex align-center" style="gap:16px;">
+            <div class="head-dashboard">
+                <div class="head-brand">
                     <?php
                     $logoPath = $restaurante['logo'] ?? null;
                     $logoSrc  = ($logoPath && file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath))
                         ? htmlspecialchars($logoPath)
                         : BASE_URL . '/assets/logo.png';
                     ?>
-                    <div style="width:56px;height:56px;border-radius:var(--radius-md);overflow:hidden;
+                    <div style="width:64px;height:64px;border-radius:var(--radius-md);overflow:hidden;
                                 border:2px solid var(--border);background:var(--bg-secondary);
                                 display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <img src="<?= $logoSrc ?>" alt="Logo"
-                             style="max-width:100%;max-height:100%;object-fit:contain;">
+                        <img src="<?= $logoSrc ?>" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain;">
                     </div>
-                    <div>
-                        <h1 style="margin-bottom:2px;"><?= htmlspecialchars($nombreMostrar) ?></h1>
-                        <p style="margin:0;">
+                    <div class="head-brand-info">
+                        <h1><?= htmlspecialchars($nombreMostrar) ?></h1>
+                        <div class="head-brand-meta">
                             <?php if (!empty($restaurante['ruc'])): ?>
-                                <span style="font-size:.78rem;">RUC <?= htmlspecialchars($restaurante['ruc']) ?></span>
-                                <span style="color:var(--border);margin:0 4px;">·</span>
+                                <span><i class="fa-solid fa-id-card" style="margin-right:5px;font-size:0.75rem;"></i> RUC <?= htmlspecialchars($restaurante['ruc']) ?></span>
                             <?php endif; ?>
-                            <span style="font-size:.78rem;"><?= date('d/m/Y') ?></span>
+                            <span><i class="fa-regular fa-calendar" style="margin-right:5px;"></i> <?= date('d/m/Y') ?></span>
                             <?php if (!empty($restaurante['telefono'])): ?>
-                                <span style="color:var(--border);margin:0 4px;">·</span>
-                                <span style="font-size:.78rem;"><i class="fa-solid fa-phone" style="font-size:.7rem;"></i> <?= htmlspecialchars($restaurante['telefono']) ?></span>
+                                <span><i class="fa-solid fa-phone" style="margin-right:5px;font-size:0.75rem;"></i> <?= htmlspecialchars($restaurante['telefono']) ?></span>
                             <?php endif; ?>
-                        </p>
+                        </div>
                     </div>
                 </div>
-                <div class="d-flex gap-8">
+                <div class="head-actions">
                     <a href="config_facturacion.php" class="btn btn-ghost btn-sm">
                         <i class="fa-solid fa-store"></i> Mi Restaurante
                     </a>
@@ -196,7 +260,7 @@ require_once '../../includes/header.php';
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="mb-24">
+            <div class="dashboard-bottom-grid">
                 <!-- Top productos -->
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-trophy"></i> Top productos hoy</div>

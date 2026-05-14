@@ -13,10 +13,12 @@ require_once '../../includes/header.php';
 ?>
 
 <style>
-body { background: #1A1A2E; }
-
 /* Forzar header oscuro en cocina */
-.navbar { background: #0F0F1A; border-bottom: 2px solid #1A1A2E; }
+.navbar { background: #0F0F1A; border-bottom: none; }
+
+/* Ajustar colores de texto para el estado vacío ahora que el fondo es blanco */
+.cocina-vacia { color: var(--text-secondary); }
+.cocina-vacia .icon { color: var(--border); }
 </style>
 
 <!-- Audio de alerta -->
@@ -27,8 +29,13 @@ body { background: #1A1A2E; }
 <!-- Cocina Header personalizada -->
 <div class="cocina-header">
     <div>
-        <h1><i class="fa-solid fa-kitchen-set"></i> Panel de Cocina</h1>
-        <div style="font-size:.75rem;opacity:.7;" id="cocina-reloj"></div>
+        <div style="display:flex; align-items:center; gap: 12px;">
+            <h1><i class="fa-solid fa-kitchen-set"></i> Panel de Cocina</h1>
+            <button id="btn-activar-audio" class="btn btn-sm" style="background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.3); color:white; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor:pointer; transition:all 0.2s;" onclick="activarAudio()">
+                <i class="fa-solid fa-volume-xmark"></i> Activar Sonido
+            </button>
+        </div>
+        <div style="font-size:.75rem;opacity:.7;margin-top:4px;" id="cocina-reloj"></div>
     </div>
     <div class="cocina-status">
         <div class="dot"></div>
@@ -48,12 +55,40 @@ body { background: #1A1A2E; }
 const RESTAURANTE_ID = <?= $restauranteId ?>;
 
 let estadoPrevio = null;
+let audioActivado = false;
+
+function activarAudio() {
+    const audio = document.getElementById('timbre-audio');
+    if (!audio) return;
+    audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audioActivado = true;
+        const btn = document.getElementById('btn-activar-audio');
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Sonido Activado';
+            btn.style.borderColor = 'var(--success)';
+            btn.style.color = 'var(--success)';
+            btn.style.background = 'rgba(40, 167, 69, 0.1)';
+        }
+        if (typeof Toast !== 'undefined') Toast.exito('Alertas sonoras activadas');
+    }).catch(e => console.error('Error al activar audio:', e));
+}
 
 function reproducirTimbre() {
+    if (!audioActivado) return;
     const audio = document.getElementById('timbre-audio');
     if (!audio) return;
     audio.currentTime = 0;
-    audio.play().catch(() => {});
+    audio.play().catch(() => {
+        audioActivado = false;
+        const btn = document.getElementById('btn-activar-audio');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> Activar Sonido';
+            btn.style.borderColor = 'var(--danger)';
+            btn.style.color = 'var(--danger)';
+        }
+    });
 }
 
 function detectarCambiosYAlertar(pedidos) {
@@ -106,9 +141,7 @@ function renderPedidos(pedidos) {
     grid.className = 'cocina-grid';
 
     pedidos.forEach(p => {
-        const ahora   = new Date();
-        const inicio  = new Date(p.created_at);
-        const minutos = Math.round((ahora - inicio) / 60000);
+        const minutos = parseInt(p.minutos_transcurridos) || 0;
         const urgente = minutos >= 20;
 
         const card = document.createElement('div');
