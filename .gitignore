@@ -1,1 +1,9 @@
 .env
+vendor/
+node_modules/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+error_log
+*.log
