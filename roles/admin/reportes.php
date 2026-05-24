@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/reportes.php — Reportes de ventas
  * Sistema SaaS Restaurante | R.DEV
@@ -52,6 +52,13 @@ $ventasMetodos = $stMetodos->fetchAll();
 
 $totalGeneral = array_sum(array_column($ventasDia, 'total'));
 
+// Obtener gastos del periodo
+$stGastosRep = $db->prepare("SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE restaurante_id = ? AND fecha BETWEEN ? AND ? AND activo = 1");
+$stGastosRep->execute([$restauranteId, $fechaInicio, $fechaFin]);
+$totalGastos = $stGastosRep->fetchColumn();
+
+$utilidadNeta = $totalGeneral - $totalGastos;
+
 $pageTitle  = 'Reportes';
 $activeMenu = 'reportes';
 require_once '../../includes/header.php';
@@ -91,13 +98,26 @@ require_once '../../includes/header.php';
                 <div class="stat-card verde">
                     <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div class="stat-valor">S/ <?= number_format($totalGeneral, 2) ?></div>
-                    <div class="stat-label">Total período</div>
+                    <div class="stat-label">Ingresos Brutos</div>
                 </div>
                 <div class="stat-card rojo">
+                    <div class="stat-icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                    <div class="stat-valor">S/ <?= number_format($totalGastos, 2) ?></div>
+                    <div class="stat-label">Gastos Operativos</div>
+                </div>
+                <div class="stat-card azul" style="background: var(--primary-light); border-color: var(--primary);">
+                    <div class="stat-icon" style="color: var(--primary);"><i class="fa-solid fa-piggy-bank"></i></div>
+                    <div class="stat-valor" style="color: var(--primary);">S/ <?= number_format($utilidadNeta, 2) ?></div>
+                    <div class="stat-label" style="color: var(--primary);">Utilidad Neta</div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
                     <div class="stat-valor"><?= array_sum(array_column($ventasDia, 'pedidos')) ?></div>
                     <div class="stat-label">Pedidos totales</div>
                 </div>
+            </div>
+
+            <div class="stats-grid mb-24">
                 <?php
                 $metodoMap2 = array_column($ventasMetodos, 'total', 'metodo');
                 $metodos2 = [

@@ -50,12 +50,14 @@ if ($rol === 'superadmin') {
             <li><a href="<?= BASE_URL ?>/roles/admin/menu_productos.php"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
+            <li><a href="<?= BASE_URL ?>/roles/admin/gastos.php"><span class="menu-icon"><i class="fa-solid fa-money-bill-wave"></i></span> Gastos</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/historial_comprobantes.php"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Mi Restaurante</a></li>
 
         <?php elseif ($rol === 'atencion'): ?>
             <li><a href="<?= BASE_URL ?>/roles/atencion/dashboard.php"><span class="menu-icon"><i class="fa-solid fa-map-location-dot"></i></span> Mapa de Mesas</a></li>
+            <li><a href="<?= BASE_URL ?>/roles/atencion/gastos.php"><span class="menu-icon"><i class="fa-solid fa-money-bill-wave"></i></span> Gastos del Día</a></li>
 
         <?php elseif ($rol === 'cocina'): ?>
             <li><a href="<?= BASE_URL ?>/roles/cocina/dashboard.php"><span class="menu-icon"><i class="fa-solid fa-kitchen-set"></i></span> Panel Cocina</a></li>

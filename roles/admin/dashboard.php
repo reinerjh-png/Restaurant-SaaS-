@@ -21,6 +21,12 @@ $stVentas = $db->prepare("
 $stVentas->execute([$restauranteId, $hoy]);
 $ventas = $stVentas->fetch();
 
+$stGastosDia = $db->prepare("SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE restaurante_id = ? AND fecha = ? AND activo = 1");
+$stGastosDia->execute([$restauranteId, $hoy]);
+$gastosDia = $stGastosDia->fetchColumn();
+
+$utilidadDia = $ventas['total_dia'] - $gastosDia;
+
 $stMesas = $db->prepare("SELECT COUNT(*) AS ocupadas FROM mesas WHERE restaurante_id = ? AND estado = 'ocupada' AND activo = 1");
 $stMesas->execute([$restauranteId]);
 $mesasOcupadas = $stMesas->fetchColumn();
@@ -198,21 +204,34 @@ require_once '../../includes/header.php';
             </div>
 
             <!-- Estadísticas -->
-            <div class="stats-grid">
+            <div class="stats-grid mb-24">
                 <div class="stat-card verde">
                     <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div class="stat-valor">S/ <?= number_format($ventas['total_dia'], 2) ?></div>
-                    <div class="stat-label">Ventas hoy</div>
+                    <div class="stat-label">Ingresos hoy</div>
                 </div>
                 <div class="stat-card rojo">
-                    <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
-                    <div class="stat-valor"><?= $ventas['pedidos_dia'] ?></div>
-                    <div class="stat-label">Pedidos cobrados</div>
+                    <div class="stat-icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                    <div class="stat-valor">S/ <?= number_format($gastosDia, 2) ?></div>
+                    <div class="stat-label">Gastos hoy</div>
+                </div>
+                <div class="stat-card azul" style="background: var(--primary-light); border-color: var(--primary);">
+                    <div class="stat-icon" style="color: var(--primary);"><i class="fa-solid fa-piggy-bank"></i></div>
+                    <div class="stat-valor" style="color: var(--primary);">S/ <?= number_format($utilidadDia, 2) ?></div>
+                    <div class="stat-label" style="color: var(--primary);">Utilidad hoy</div>
                 </div>
                 <div class="stat-card naranja">
                     <div class="stat-icon"><i class="fa-solid fa-chair"></i></div>
                     <div class="stat-valor"><?= $mesasOcupadas ?> / <?= $totalMesas ?></div>
                     <div class="stat-label">Mesas ocupadas</div>
+                </div>
+            </div>
+
+            <div class="stats-grid mb-24">
+                <div class="stat-card rojo">
+                    <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
+                    <div class="stat-valor"><?= $ventas['pedidos_dia'] ?></div>
+                    <div class="stat-label">Pedidos cobrados</div>
                 </div>
                 <div class="stat-card dorado">
                     <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>

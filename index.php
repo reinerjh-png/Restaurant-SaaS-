@@ -117,7 +117,7 @@ unset($_SESSION['login_error']);
             </form>
 
             <div class="login-footer">
-                <p>Sistema desarrollado por <strong>Reiner Jiménez</strong> · R.DEV</p>
+                <p>Sistema desarrollado por <a href="https://www.linkedin.com/in/reiner-jairo-jim%C3%A9nez-huaman-9234a9388/" target="_blank" rel="noopener noreferrer" className="text-white hover:underline"><strong>Reiner Jimenez</strong></a> · R.DEV</p>
                 <p style="margin-top:4px;">© <?= date('Y') ?> · Todos los derechos reservados</p>
             </div>
         </div>

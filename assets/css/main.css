@@ -336,7 +336,8 @@ p {
     transition: transform .28s cubic-bezier(.4, 0, .2, 1);
     box-shadow: 4px 0 32px rgba(0, 0, 0, .18);
     width: 260px !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     background: var(--surface) !important;
   }
 
