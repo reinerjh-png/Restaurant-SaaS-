@@ -52,28 +52,6 @@ $activeMenu = 'dashboard';
 require_once '../../includes/header.php';
 ?>
 
-<div class="layout-admin">
-    <aside class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.php" class="active"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
-            <li><a href="restaurantes.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
-            <li><a href="perfil.php"><span class="menu-icon"><i class="fa-solid fa-user-shield"></i></span> Mi Perfil</a></li>
-        </ul>
-        <div style="padding:16px 20px;border-top:1px solid var(--border);margin-top:auto;">
-            <div style="font-size:.71rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Acceso rápido</div>
-            <?php foreach ($restaurantes as $r): ?>
-            <a href="<?= BASE_URL ?>/roles/admin/dashboard.php?set_rest_id=<?= $r['id'] ?>"
-               style="display:flex;align-items:center;gap:8px;font-size:.8rem;padding:7px 8px;border-radius:var(--radius-sm);color:var(--text-secondary);margin-bottom:2px;transition:.15s;"
-               onmouseover="this.style.background='var(--bg)'"
-               onmouseout="this.style.background='transparent'">
-               <i class="fa-solid fa-store" style="font-size:.75rem;flex-shrink:0;"></i>
-               <?= htmlspecialchars($r['nombre']) ?>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </aside>
-
-    <div class="main-content">
         <div class="page-content">
 
             <!-- Encabezado -->
@@ -192,10 +170,6 @@ require_once '../../includes/header.php';
                     </div>
                     <?php endforeach; ?>
                 </div>
-            </div>
-
         </div>
-    </div>
-</div>
 
 <?php require_once '../../includes/footer.php'; ?>

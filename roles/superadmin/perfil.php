@@ -63,16 +63,7 @@ $activeMenu = 'perfil';
 require_once '../../includes/header.php';
 ?>
 
-<div class="layout-admin">
-    <aside class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
-            <li><a href="restaurantes.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
-            <li><a href="perfil.php" class="active"><span class="menu-icon"><i class="fa-solid fa-user-shield"></i></span> Mi Perfil</a></li>
-        </ul>
-    </aside>
 
-    <div class="main-content">
         <div class="page-content" style="max-width:600px;">
 
             <div class="d-flex align-center justify-between mb-24">
@@ -130,7 +121,5 @@ require_once '../../includes/header.php';
             </div>
 
         </div>
-    </div>
-</div>
 
 <?php require_once '../../includes/footer.php'; ?>

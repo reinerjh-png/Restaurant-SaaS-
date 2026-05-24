@@ -34,7 +34,7 @@ loadEnv(__DIR__ . '/../.env');
 // Detectar automáticamente la URL base (para localhost vs InfinityFree)
 $host = $_SERVER['HTTP_HOST'] ?? '';
 if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
-    define('BASE_URL', '/sistema_restaurante');
+    define('BASE_URL', '/system-restaurant');
 } else {
     define('BASE_URL', '');
 }

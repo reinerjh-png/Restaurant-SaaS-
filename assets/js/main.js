@@ -271,12 +271,20 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.addEventListener('click', () => toggleSidebar(false));
 
             function toggleSidebar(force) {
-                const open = (force === undefined) ? !sidebar.classList.contains('abierto') : force;
-                sidebar.classList.toggle('abierto', open);
-                overlay.classList.toggle('activo', open);
-                ham.innerHTML = open
-                    ? '<i class="fa-solid fa-xmark"></i>'
-                    : '<i class="fa-solid fa-bars"></i>';
+                if (window.innerWidth > 860) {
+                    const collapsed = (force === false) ? true : (force === true ? false : !sidebar.classList.contains('collapsed'));
+                    sidebar.classList.toggle('collapsed', collapsed);
+                    // Forzar que no tenga la clase abierto para evitar inconsistencias si cambia de tamaño
+                    sidebar.classList.remove('abierto');
+                    overlay.classList.remove('activo');
+                } else {
+                    const open = (force === undefined) ? !sidebar.classList.contains('abierto') : force;
+                    sidebar.classList.toggle('abierto', open);
+                    overlay.classList.toggle('activo', open);
+                    ham.innerHTML = open
+                        ? '<i class="fa-solid fa-xmark"></i>'
+                        : '<i class="fa-solid fa-bars"></i>';
+                }
             }
         }
     }

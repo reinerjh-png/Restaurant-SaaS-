@@ -158,23 +158,6 @@ require_once '../../includes/header.php';
 }
 </style>
 
-<div class="layout-admin">
-    <aside class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.php" class="active"><span class="menu-icon"><i class="fa-solid fa-chart-bar"></i></span> Dashboard</a></li>
-            <li><a href="mesas.php"><span class="menu-icon"><i class="fa-solid fa-chair"></i></span> Mesas</a></li>
-            <li><a href="menu_categorias.php"><span class="menu-icon"><i class="fa-solid fa-folder"></i></span> Categorías</a></li>
-            <li><a href="menu_productos.php"><span class="menu-icon"><i class="fa-solid fa-utensils"></i></span> Productos</a></li>
-            <li><a href="usuarios.php"><span class="menu-icon"><i class="fa-solid fa-users"></i></span> Usuarios</a></li>
-            <li><a href="reportes.php"><span class="menu-icon"><i class="fa-solid fa-chart-line"></i></span> Reportes</a></li>
-            <li><a href="historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
-            <li><a href="historial_comprobantes.php"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
-            <li><a href="config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Mi Restaurante</a></li>
-        </ul>
-    </aside>
-
-    <!-- Contenido principal -->
-    <div class="main-content">
         <div class="page-content">
 
             <!-- Encabezado con Branding -->
@@ -315,7 +298,5 @@ require_once '../../includes/header.php';
             </div>
 
         </div>
-    </div>
-</div>
 
 <?php require_once '../../includes/footer.php'; ?>

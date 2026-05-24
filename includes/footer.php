@@ -4,6 +4,8 @@
  * Sistema SaaS Restaurante | R.DEV
  */
 ?>
+    </div> <!-- /main-content -->
+</div> <!-- /layout-admin -->
     <!-- Scripts globales -->
     <script src="<?= BASE_URL ?>/assets/js/main.js?v=<?= filemtime(__DIR__ . '/../assets/js/main.js') ?>"></script>
     <?php if (isset($extraJS)): ?>

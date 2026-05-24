@@ -88,19 +88,12 @@ if (!empty($_SESSION['restaurante_id']) && $_SESSION['rol'] !== 'superadmin') {
                <i class="fa-solid fa-arrow-left"></i> Panel global
             </a>
         <?php endif; ?>
-        <div class="navbar-user">
-            <div class="avatar"><?= $nombreInicial ?></div>
-            <span style="font-size:0.82rem;"><?= htmlspecialchars($_SESSION['nombre'] ?? 'Usuario') ?></span>
-            <span class="rol-badge rol-<?= $_SESSION['rol'] ?>"><?= $rolLabel ?></span>
-        </div>
-        <?php if (!isset($hideLogout) || !$hideLogout): ?>
-        <a href="<?= BASE_URL ?>/auth/logout.php" class="btn-logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span class="logout-label">Salir</span>
-        </a>
-        <?php endif; ?>
     </div>
 </nav>
+
+<div class="layout-admin">
+    <?php include __DIR__ . '/sidebar.php'; ?>
+    <div class="main-content">
 
 <!-- Modal de opciones secuenciales (global, disponible en todas las páginas) -->
 <div class="modal-overlay" id="modal-opciones">

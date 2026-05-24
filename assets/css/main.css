@@ -302,7 +302,7 @@ p {
 }
 
 .btn-hamburguesa {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: none;
@@ -349,6 +349,17 @@ p {
   }
 }
 
+@media (min-width: 861px) {
+  .sidebar.collapsed {
+    width: 0 !important;
+    padding: 16px 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: 0px solid transparent !important;
+    overflow: hidden !important;
+  }
+}
+
 .layout-admin {
   display: flex;
   min-height: calc(100vh - 60px);
@@ -366,6 +377,13 @@ p {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  transition: width 0.3s cubic-bezier(.4, 0, .2, 1), padding 0.3s cubic-bezier(.4, 0, .2, 1), border-color 0.3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.sidebar-menu a,
+.sidebar-user-panel,
+.sidebar-user-panel * {
+  white-space: nowrap;
 }
 
 /* Sección superior del sidebar */
@@ -2162,9 +2180,7 @@ tbody td {
 
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .sidebar {
-    display: none;
-  }
+  /* .sidebar is handled by the slide-in rules at max-width: 860px */
 
   .layout-admin {
     flex-direction: column;

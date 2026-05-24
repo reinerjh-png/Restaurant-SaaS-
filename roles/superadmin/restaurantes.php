@@ -29,16 +29,7 @@ $activeMenu = 'restaurantes';
 require_once '../../includes/header.php';
 ?>
 
-<div class="layout-admin">
-    <aside class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.php"><span class="menu-icon"><i class="fa-solid fa-globe"></i></span> Dashboard Global</a></li>
-            <li><a href="restaurantes.php" class="active"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Restaurantes</a></li>
-            <li><a href="perfil.php"><span class="menu-icon"><i class="fa-solid fa-user-shield"></i></span> Mi Perfil</a></li>
-        </ul>
-    </aside>
 
-    <div class="main-content">
         <div class="page-content">
 
             <div class="d-flex align-center justify-between mb-24">
@@ -75,8 +66,6 @@ require_once '../../includes/header.php';
                         <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;text-align:center;">
                             <div style="font-size:1.3rem;font-weight:800;color:var(--text-primary);"><?= $r['total_mesas'] ?></div>
                             <div style="font-size:.7rem;color:var(--text-secondary);">Mesas</div>
-                        </div>
-                    </div>
 
                     <?php if ($r['admin_nombre']): ?>
                     <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px;font-size:.8rem;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
