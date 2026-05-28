@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/menu_productos.php — Gestión de productos del menú
  * Sistema SaaS Restaurante | R.DEV
@@ -97,8 +97,10 @@ require_once '../../includes/header.php';
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
+                    </div><!-- /.producto-info -->
+                </div><!-- /.producto-card -->
                 <?php endforeach; ?>
-            </div>
+            </div><!-- /#productos-grid -->
 
             <?php if (!$productos): ?>
             <div class="empty-state">
