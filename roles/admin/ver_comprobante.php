@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/ver_comprobante.php
  * Vista detallada de un comprobante desde el panel admin.
@@ -129,7 +129,11 @@ require_once '../../includes/header.php';
 
                 <div class="ticket-tipo-wrap">
                     <span class="ticket-tipo-comp">
-                        <?= $comp['tipo'] === 'boleta' ? 'Boleta de Venta' : 'Factura' ?>
+                        <?php
+                        if ($comp['tipo'] === 'boleta') echo 'Boleta de Venta';
+                        elseif ($comp['tipo'] === 'factura') echo 'Factura';
+                        else echo 'Comprobante Simple';
+                        ?>
                     </span>
                 </div>
 
@@ -141,6 +145,7 @@ require_once '../../includes/header.php';
                 </div>
 
                 <!-- Datos cliente -->
+                <?php if ($comp['tipo'] !== 'simple'): ?>
                 <div class="ticket-section">
                     <div class="ticket-row">
                         <span class="label"><?= strtoupper($comp['tipo_documento']) ?>:</span>
@@ -160,6 +165,7 @@ require_once '../../includes/header.php';
                     <?php endif; ?>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
 
                 <!-- Items -->
                 <div class="ticket-section">

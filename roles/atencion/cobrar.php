@@ -106,6 +106,12 @@ require_once '../../includes/header.php';
                 <i class="fa-solid fa-xmark" style="font-size:1.1rem;color:var(--text-secondary);"></i>
                 <span class="metodo-nombre">No, solo cobrar</span>
             </label>
+            <label id="opc-simple-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('simple')">
+                <input type="radio" name="tipo_comp" value="simple" id="opc-simple" style="display:none;">
+                <div class="metodo-check" id="check-comp-simple"><i class="fa-solid fa-check"></i></div>
+                <i class="fa-solid fa-file-lines" style="font-size:1.1rem;color:var(--text-secondary);"></i>
+                <span class="metodo-nombre">Comprobante Simple</span>
+            </label>
             <label id="opc-boleta-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('boleta')">
                 <input type="radio" name="tipo_comp" value="boleta" id="opc-boleta" style="display:none;">
                 <div class="metodo-check" id="check-comp-boleta"><i class="fa-solid fa-check"></i></div>
@@ -237,9 +243,9 @@ const METODOS      = ['efectivo','yape','transferencia','tarjeta','otro'];
 const activos      = new Set();
 
 // ── Selección de tipo de comprobante ──────────────────────────
-let tipoComp = 'no'; // 'no' | 'boleta' | 'factura'
+let tipoComp = 'no'; // 'no' | 'boleta' | 'factura' | 'simple'
 
-const OPCIONES_COMP = ['no', 'boleta', 'factura'];
+const OPCIONES_COMP = ['no', 'simple', 'boleta', 'factura'];
 
 function seleccionarTipoComp(tipo) {
     tipoComp = tipo;
@@ -260,7 +266,7 @@ function seleccionarTipoComp(tipo) {
     const labelNroDoc  = document.getElementById('label-nro-doc');
     const inputDoc     = document.getElementById('input-nro-doc');
 
-    if (tipo === 'no') {
+    if (tipo === 'no' || tipo === 'simple') {
         cardCliente.style.display = 'none';
     } else {
         cardCliente.style.display = '';
@@ -413,28 +419,37 @@ async function confirmarCobro() {
     // Validar datos de comprobante si aplica
     let clienteData = null;
     if (tipoComp !== 'no') {
-        const numDoc       = document.getElementById('input-nro-doc').value.trim().replace(/\D/g,'');
-        const nombreCliente= document.getElementById('input-nombre-cliente')?.value.trim() || '';
-        const tipoDoc      = tipoComp === 'boleta' ? 'dni' : 'ruc';
-        const need         = tipoComp === 'boleta' ? 8 : 11;
+        if (tipoComp !== 'simple') {
+            const numDoc       = document.getElementById('input-nro-doc').value.trim().replace(/\D/g,'');
+            const nombreCliente= document.getElementById('input-nombre-cliente')?.value.trim() || '';
+            const tipoDoc      = tipoComp === 'boleta' ? 'dni' : 'ruc';
+            const need         = tipoComp === 'boleta' ? 8 : 11;
 
-        if (numDoc.length !== need) {
-            Toast.advertencia(`El ${tipoDoc.toUpperCase()} debe tener ${need} dígitos.`);
-            return;
+            if (numDoc.length !== need) {
+                Toast.advertencia(`El ${tipoDoc.toUpperCase()} debe tener ${need} dígitos.`);
+                return;
+            }
+            if (!nombreCliente) {
+                Toast.advertencia('Ingresa el nombre del cliente.');
+                return;
+            }
+            clienteData = {
+                tipo_documento:  tipoDoc,
+                numero_documento: numDoc,
+                nombre_cliente:   nombreCliente,
+                direccion:        document.getElementById('input-direccion')?.value.trim()    || '',
+                distrito:         document.getElementById('input-distrito')?.value.trim()     || '',
+                provincia:        document.getElementById('input-provincia')?.value.trim()    || '',
+                departamento:     document.getElementById('input-departamento')?.value.trim() || '',
+            };
+        } else {
+            // Para comprobante simple
+            clienteData = {
+                tipo_documento: null,
+                numero_documento: null,
+                nombre_cliente: 'Cliente',
+            };
         }
-        if (!nombreCliente) {
-            Toast.advertencia('Ingresa el nombre del cliente.');
-            return;
-        }
-        clienteData = {
-            tipo_documento:  tipoDoc,
-            numero_documento: numDoc,
-            nombre_cliente:   nombreCliente,
-            direccion:        document.getElementById('input-direccion')?.value.trim()    || '',
-            distrito:         document.getElementById('input-distrito')?.value.trim()     || '',
-            provincia:        document.getElementById('input-provincia')?.value.trim()    || '',
-            departamento:     document.getElementById('input-departamento')?.value.trim() || '',
-        };
     }
 
     const btn = document.getElementById('btn-confirmar-cobro');

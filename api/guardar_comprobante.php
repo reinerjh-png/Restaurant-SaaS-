@@ -13,9 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(false, null, 'Método no
 $input = json_decode(file_get_contents('php://input'), true);
 
 $pedidoId      = (int)($input['pedido_id']       ?? 0);
-$tipo          = strtolower(trim($input['tipo']  ?? '')); // boleta | factura
-$tipoDoc       = strtolower(trim($input['tipo_documento'] ?? '')); // dni | ruc
-$numDoc        = preg_replace('/\D/', '', trim($input['numero_documento'] ?? ''));
+$tipo          = strtolower(trim($input['tipo']  ?? '')); // boleta | factura | simple
+$tipoDoc       = strtolower(trim($input['tipo_documento'] ?? '')) ?: null; // dni | ruc | null (simple)
+$numDoc        = preg_replace('/\D/', '', trim($input['numero_documento'] ?? '')) ?: null;
 $nombreCliente = trim($input['nombre_cliente']   ?? '');
 $direccion     = trim($input['direccion']         ?? '');
 $distrito      = trim($input['distrito']          ?? '');
@@ -28,13 +28,17 @@ $usuarioId     = $_SESSION['usuario_id'];
 $restauranteId = $_SESSION['restaurante_id'];
 
 // ── Validaciones ────────────────────────────────────────────────
-if (!$pedidoId)         jsonResponse(false, null, 'Pedido inválido.');
-if (!in_array($tipo, ['boleta', 'factura'])) jsonResponse(false, null, 'Tipo de comprobante inválido.');
-if (!in_array($tipoDoc, ['dni', 'ruc']))     jsonResponse(false, null, 'Tipo de documento inválido.');
-if ($tipoDoc === 'dni' && strlen($numDoc) !== 8) jsonResponse(false, null, 'DNI debe tener 8 dígitos.');
-if ($tipoDoc === 'ruc' && strlen($numDoc) !== 11) jsonResponse(false, null, 'RUC debe tener 11 dígitos.');
-if (empty($nombreCliente)) jsonResponse(false, null, 'El nombre/razón social es requerido.');
-if (empty($pagos))         jsonResponse(false, null, 'No se registraron métodos de pago.');
+if (!$pedidoId) jsonResponse(false, null, 'Pedido inválido.');
+if (!in_array($tipo, ['boleta', 'factura', 'simple'])) jsonResponse(false, null, 'Tipo de comprobante inválido.');
+if (empty($pagos))  jsonResponse(false, null, 'No se registraron métodos de pago.');
+
+// Validaciones específicas para boleta/factura (no aplican a comprobante simple)
+if ($tipo !== 'simple') {
+    if (!in_array($tipoDoc, ['dni', 'ruc'])) jsonResponse(false, null, 'Tipo de documento inválido.');
+    if ($tipoDoc === 'dni' && strlen($numDoc) !== 8)  jsonResponse(false, null, 'DNI debe tener 8 dígitos.');
+    if ($tipoDoc === 'ruc' && strlen($numDoc) !== 11) jsonResponse(false, null, 'RUC debe tener 11 dígitos.');
+    if (empty($nombreCliente)) jsonResponse(false, null, 'El nombre/razón social es requerido.');
+}
 
 $db = getDB();
 
@@ -70,10 +74,11 @@ try {
     }
 
     // 3. Incrementar correlativo y obtener número de comprobante
-    $campoCorrel  = $tipo === 'boleta' ? 'correlativo_boleta' : 'correlativo_factura';
-    $campoSerie   = $tipo === 'boleta' ? 'serie_boleta'        : 'serie_factura';
+    // El comprobante simple comparte la serie/correlativo de boleta
+    $campoCorrel  = $tipo === 'factura' ? 'correlativo_factura' : 'correlativo_boleta';
+    $campoSerie   = $tipo === 'factura' ? 'serie_factura'       : 'serie_boleta';
     $nuevoCorrel  = intval($cfg[$campoCorrel]) + 1;
-    $serie        = $cfg[$campoSerie] ?: ($tipo === 'boleta' ? 'B001' : 'F001');
+    $serie        = $cfg[$campoSerie] ?: ($tipo === 'factura' ? 'F001' : 'B001');
     $numComp      = $serie . '-' . str_pad($nuevoCorrel, 5, '0', STR_PAD_LEFT);
 
     $stActCfg = $db->prepare("UPDATE facturacion_config SET $campoCorrel = ? WHERE restaurante_id = ?");
@@ -116,12 +121,12 @@ try {
         $serie,
         $nuevoCorrel,
         $numComp,
-        $tipoDoc,
-        $numDoc,
-        $nombreCliente,
-        $direccion ?: null,
-        $distrito  ?: null,
-        $provincia ?: null,
+        $tipoDoc  ?: null,
+        $numDoc   ?: null,
+        $nombreCliente ?: 'Cliente',
+        $direccion    ?: null,
+        $distrito     ?: null,
+        $provincia    ?: null,
         $departamento ?: null,
         $subtotal,
         $igv,

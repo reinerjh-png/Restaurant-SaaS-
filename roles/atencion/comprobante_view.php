@@ -113,7 +113,11 @@ require_once '../../includes/header.php';
         <!-- Tipo de comprobante -->
         <div class="ticket-tipo-wrap">
             <span class="ticket-tipo-comp">
-                <?= strtoupper($comp['tipo']) === 'BOLETA' ? 'Boleta de Venta' : 'Factura' ?>
+                <?php
+                if (strtoupper($comp['tipo']) === 'BOLETA') echo 'Boleta de Venta';
+                elseif (strtoupper($comp['tipo']) === 'FACTURA') echo 'Factura';
+                else echo 'Comprobante Simple';
+                ?>
             </span>
         </div>
 
@@ -134,6 +138,7 @@ require_once '../../includes/header.php';
         </div>
 
         <!-- Datos del cliente -->
+        <?php if ($comp['tipo'] !== 'simple'): ?>
         <div class="ticket-section">
             <div class="ticket-row">
                 <span class="label"><?= strtoupper($comp['tipo_documento']) ?>:</span>
@@ -160,6 +165,7 @@ require_once '../../includes/header.php';
             <?php endif; ?>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <!-- Tabla de items -->
         <div class="ticket-section">
