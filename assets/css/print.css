@@ -174,29 +174,44 @@
         box-sizing: border-box;
     }
 
-    html, body {
+    /* Ocultar TODO visualmente pero mantener el layout base */
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* Hacer visible SÓLO el comprobante y todos sus hijos */
+    #comprobante-print-root,
+    #comprobante-print-root * {
+        visibility: visible !important;
+    }
+
+    /* Posicionar el comprobante arriba a la izquierda para impresión */
+    #comprobante-print-root {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
-        background: #fff !important;
+        width: 100% !important;
     }
 
     .ticket-wrapper {
-        width: 72mm !important;           /* ancho efectivo en papel 80mm */
-        max-width: 72mm !important;
-        margin: 0 auto !important;
-        padding: 4mm 4mm 6mm !important;
+        width: 72mm;           /* ancho efectivo en papel 80mm */
+        max-width: 72mm;
+        margin: 0 auto;
+        padding: 4mm 4mm 6mm;
         box-shadow: none !important;
         border-radius: 0 !important;
-        font-size: 9pt !important;
+        font-size: 9pt;
         page-break-inside: avoid;
     }
 
     .ticket-tipo-comp {
-        font-size: 10pt !important;
+        font-size: 10pt;
     }
 
-    .ticket-items-table th { font-size: 8pt !important; }
-    .ticket-items-table td { font-size: 8.5pt !important; }
+    .ticket-items-table th { font-size: 8pt; }
+    .ticket-items-table td { font-size: 8.5pt; }
 
-    .ticket-total-row.total-final { font-size: 11pt !important; }
+    .ticket-total-row.total-final { font-size: 11pt; }
 }

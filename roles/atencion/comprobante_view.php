@@ -64,7 +64,7 @@ require_once '../../includes/header.php';
         <a href="dashboard.php" class="btn btn-ghost btn-sm">
             <i class="fa-solid fa-arrow-left"></i> Volver
         </a>
-        <button class="btn btn-primario btn-sm" onclick="printTicket()">
+        <button class="btn btn-primario btn-sm" onclick="window.print()">
             <i class="fa-solid fa-print"></i> Imprimir
         </button>
         <?php if (in_array($_SESSION['rol'], ['admin','superadmin'])): ?>
@@ -73,33 +73,6 @@ require_once '../../includes/header.php';
         </a>
         <?php endif; ?>
     </div>
-
-    <script>
-    function printTicket() {
-        // Guardar display original
-        const originalDisplays = [];
-        Array.from(document.body.children).forEach(child => {
-            if (child.tagName !== 'SCRIPT') {
-                originalDisplays.push({ el: child, display: child.style.display });
-                child.style.display = 'none';
-            }
-        });
-
-        // Crear div temporal de impresión
-        const printDiv = document.createElement('div');
-        printDiv.id = 'temp-print-div';
-        printDiv.innerHTML = document.getElementById('comprobante-print-root').innerHTML;
-        document.body.appendChild(printDiv);
-
-        window.print();
-
-        // Restaurar estado
-        document.body.removeChild(printDiv);
-        originalDisplays.forEach(item => {
-            item.el.style.display = item.display;
-        });
-    }
-    </script>
 
     <!-- ══ COMPROBANTE IMPRIMIBLE ═════════════════════════════ -->
     <div id="comprobante-print-root">
