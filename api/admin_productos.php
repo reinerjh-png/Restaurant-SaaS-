@@ -99,26 +99,47 @@ switch ($accion) {
         $id = (int)($input['id'] ?? 0);
         if (!$id) jsonResponse(false, null, 'ID requerido');
 
-        // Verificar que no tenga pedidos activos asociados
-        $stPed = $db->prepare("
-            SELECT COUNT(*) FROM pedido_items pi
-            JOIN pedidos pe ON pe.id = pi.pedido_id
-            WHERE pi.producto_id = ? AND pe.estado = 'activo'
-        ");
-        $stPed->execute([$id]);
-        if ($stPed->fetchColumn() > 0) {
-            jsonResponse(false, null, 'No se puede eliminar: el producto está en un pedido activo');
+        try {
+            // Verificar que no tenga pedidos activos asociados
+            $stPed = $db->prepare("
+                SELECT COUNT(*) FROM pedido_items pi
+                JOIN pedidos pe ON pe.id = pi.pedido_id
+                WHERE pi.producto_id = ? AND pe.estado = 'activo'
+            ");
+            $stPed->execute([$id]);
+            if ($stPed->fetchColumn() > 0) {
+                jsonResponse(false, null, 'No se puede eliminar: el producto está en un pedido activo');
+            }
+
+            // Verificar que el producto pertenece a este restaurante
+            $stOwn = $db->prepare("SELECT id FROM productos WHERE id = ? AND restaurante_id = ?");
+            $stOwn->execute([$id, $restauranteId]);
+            if (!$stOwn->fetch()) {
+                jsonResponse(false, null, 'Producto no encontrado');
+            }
+
+            $db->beginTransaction();
+
+            // Eliminar opciones asociadas primero
+            $stDelVal = $db->prepare("DELETE ov FROM opciones_valor ov JOIN opciones_grupo og ON og.id = ov.grupo_id WHERE og.producto_id = ?");
+            $stDelVal->execute([$id]);
+            $stDelGrp = $db->prepare("DELETE FROM opciones_grupo WHERE producto_id = ?");
+            $stDelGrp->execute([$id]);
+
+            $st = $db->prepare("DELETE FROM productos WHERE id = ? AND restaurante_id = ?");
+            $st->execute([$id, $restauranteId]);
+
+            $db->commit();
+            jsonResponse(true, null, 'Producto eliminado correctamente');
+
+        } catch (PDOException $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            // Clave foránea: el producto tiene historial en pedidos cerrados
+            if ($e->getCode() === '23000') {
+                jsonResponse(false, null, 'No se puede eliminar: el producto tiene historial de pedidos. Márcalo como inactivo en su lugar.');
+            }
+            jsonResponse(false, null, 'Error al eliminar: ' . $e->getMessage());
         }
-
-        // Eliminar opciones associadas primero
-        $stDelVal = $db->prepare("DELETE ov FROM opciones_valor ov JOIN opciones_grupo og ON og.id = ov.grupo_id WHERE og.producto_id = ?");
-        $stDelVal->execute([$id]);
-        $stDelGrp = $db->prepare("DELETE FROM opciones_grupo WHERE producto_id = ?");
-        $stDelGrp->execute([$id]);
-
-        $st = $db->prepare("DELETE FROM productos WHERE id=? AND restaurante_id=?");
-        $st->execute([$id, $restauranteId]);
-        jsonResponse(true, null, 'Producto eliminado correctamente');
 
     default:
         jsonResponse(false, null, 'Acción no reconocida');

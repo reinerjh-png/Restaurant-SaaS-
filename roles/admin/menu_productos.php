@@ -334,10 +334,17 @@ function eliminarProducto(id, nombre) {
                 headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                 body: JSON.stringify({ accion: 'eliminar', id })
             });
-            const json = await res.json();
+            const text = await res.text();
+            let json;
+            try { json = JSON.parse(text); }
+            catch(pe) {
+                console.error('Respuesta no-JSON del servidor:', text);
+                Toast.error('Error del servidor. Revisa la consola.');
+                return;
+            }
             if (json.success) { Toast.exito(json.message); setTimeout(() => location.reload(), 700); }
             else Toast.error(json.message);
-        } catch(e) { Toast.error('Error de conexión'); }
+        } catch(e) { console.error(e); Toast.error('Error de red. Verifica tu conexión.'); }
     });
 }
 

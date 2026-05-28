@@ -127,7 +127,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
 CREATE TABLE IF NOT EXISTS pedido_items (
     id              INT PRIMARY KEY AUTO_INCREMENT,
     pedido_id       INT          NOT NULL,
-    producto_id     INT          NOT NULL,
+    producto_id     INT          DEFAULT NULL,
+    nombre_producto VARCHAR(120) DEFAULT NULL,
     cantidad        INT          DEFAULT 1,
     precio_unitario DECIMAL(8,2) NOT NULL,
     subtotal        DECIMAL(8,2) NOT NULL,
@@ -135,7 +136,7 @@ CREATE TABLE IF NOT EXISTS pedido_items (
     estado          ENUM('pendiente','en_preparacion','listo','entregado') DEFAULT 'pendiente',
     created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pedido_id)  REFERENCES pedidos(id)   ON DELETE CASCADE,
-    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ─────────────────────────────────────────
