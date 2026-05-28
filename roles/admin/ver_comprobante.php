@@ -71,7 +71,7 @@ require_once '../../includes/header.php';
                 <a href="historial_comprobantes.php" class="btn btn-ghost btn-sm">
                     <i class="fa-solid fa-arrow-left"></i> Volver al historial
                 </a>
-                <button class="btn btn-primario btn-sm" onclick="window.print()">
+                <button class="btn btn-primario btn-sm" onclick="printTicket()">
                     <i class="fa-solid fa-print"></i> Imprimir
                 </button>
                 <?php if (!$comp['anulado']): ?>
@@ -80,6 +80,33 @@ require_once '../../includes/header.php';
                 </button>
                 <?php endif; ?>
             </div>
+
+            <script>
+            function printTicket() {
+                // Guardar display original
+                const originalDisplays = [];
+                Array.from(document.body.children).forEach(child => {
+                    if (child.tagName !== 'SCRIPT') {
+                        originalDisplays.push({ el: child, display: child.style.display });
+                        child.style.display = 'none';
+                    }
+                });
+
+                // Crear div temporal de impresión
+                const printDiv = document.createElement('div');
+                printDiv.id = 'temp-print-div';
+                printDiv.innerHTML = document.getElementById('comprobante-print-root').innerHTML;
+                document.body.appendChild(printDiv);
+
+                window.print();
+
+                // Restaurar estado
+                document.body.removeChild(printDiv);
+                originalDisplays.forEach(item => {
+                    item.el.style.display = item.display;
+                });
+            }
+            </script>
 
             <!-- Info de auditoría (no se imprime) -->
             <div class="card mb-20" style="font-size:.82rem;color:var(--text-secondary);">

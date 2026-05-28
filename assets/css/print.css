@@ -180,39 +180,23 @@
         background: #fff !important;
     }
 
-    /* Ocultar TODO excepto el comprobante */
-    body > *:not(#comprobante-print-root) {
-        display: none !important;
-    }
-    #comprobante-print-root {
-        display: block !important;
-    }
-
-    .navbar,
-    .sidebar,
-    .btn,
-    .ticket-acciones,
-    .page-content > *:not(.ticket-wrapper) {
-        display: none !important;
-    }
-
     .ticket-wrapper {
-        width: 72mm;           /* ancho efectivo en papel 80mm */
-        max-width: 72mm;
-        margin: 0 auto;
-        padding: 4mm 4mm 6mm;
+        width: 72mm !important;           /* ancho efectivo en papel 80mm */
+        max-width: 72mm !important;
+        margin: 0 auto !important;
+        padding: 4mm 4mm 6mm !important;
         box-shadow: none !important;
         border-radius: 0 !important;
-        font-size: 9pt;
+        font-size: 9pt !important;
         page-break-inside: avoid;
     }
 
     .ticket-tipo-comp {
-        font-size: 10pt;
+        font-size: 10pt !important;
     }
 
-    .ticket-items-table th { font-size: 8pt; }
-    .ticket-items-table td { font-size: 8.5pt; }
+    .ticket-items-table th { font-size: 8pt !important; }
+    .ticket-items-table td { font-size: 8.5pt !important; }
 
-    .ticket-total-row.total-final { font-size: 11pt; }
+    .ticket-total-row.total-final { font-size: 11pt !important; }
 }
