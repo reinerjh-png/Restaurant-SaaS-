@@ -153,12 +153,11 @@ function renderPedidos(pedidos) {
 
         grupos.forEach(grupo => {
             const estadoClass = grupo.estado || 'pendiente';
-            const etiquetas = {
-                'pendiente':      '<i class="fa-solid fa-hourglass-half"></i> Pendiente',
-                'en_preparacion': '<i class="fa-solid fa-fire-burner"></i> Preparando',
-                'listo':          '<i class="fa-solid fa-circle-check"></i> Listo',
-                'entregado':      '<i class="fa-solid fa-bag-shopping"></i> Entregado'
-            };
+            // Solo mostramos pendiente o listo visualmente
+            const iconHTML = (estadoClass === 'listo') 
+                ? '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>' 
+                : '<i class="fa-solid fa-hourglass-half"></i>';
+
             const idsJson = JSON.stringify(grupo.ids);
 
             itemsHTML += `
@@ -169,20 +168,27 @@ function renderPedidos(pedidos) {
                         ${grupo.opciones ? `<div class="ck-opciones">· ${grupo.opciones}</div>` : ''}
                         ${grupo.notas   ? `<div class="ck-opciones"><i class="fa-solid fa-note-sticky"></i> ${grupo.notas}</div>` : ''}
                     </div>
-                    <button class="ck-btn-listo ck-btn ${estadoClass}"
-                        onclick="cambiarEstadoItem(${idsJson}, '${estadoClass}')">
-                        ${etiquetas[estadoClass] || estadoClass}
+                    <button class="ck-btn-listo ck-btn ${estadoClass === 'listo' ? 'listo' : 'pendiente'}"
+                        title="${estadoClass === 'listo' ? 'Listo (click para ocultar)' : 'Pendiente (click para marcar listo)'}"
+                        onclick="cambiarEstadoItem(this, ${idsJson}, '${estadoClass}')">
+                        ${iconHTML}
                     </button>
                 </div>`;
         });
+
+        const tipoColor = p.tipo === 'aqui' ? 'var(--info)' : 'var(--warning)';
+        const tipoBg = p.tipo === 'aqui' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(250, 204, 21, 0.15)';
 
         card.innerHTML = `
             <div class="cocina-card-header">
                 <div>
                     <div class="ck-mesa">${p.mesa_numero ? 'Mesa ' + p.mesa_numero : 'Llevar'}</div>
-                    <div class="ck-tipo">
-                        <i class="fa-solid ${p.tipo === 'aqui' ? 'fa-house' : 'fa-bag-shopping'}"></i>
-                        ${p.tipo === 'aqui' ? 'Comer aquí' : 'Para llevar'} · #${p.id}
+                    <div class="ck-tipo" style="margin-top:4px;">
+                        <span style="color: ${tipoColor}; background: ${tipoBg}; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid ${p.tipo === 'aqui' ? 'fa-house' : 'fa-bag-shopping'}"></i>
+                            ${p.tipo === 'aqui' ? 'Comer aquí' : 'Para llevar'}
+                        </span>
+                        <span style="opacity: 0.7; margin-left: 6px; font-size: 0.85rem;">· #${p.id}</span>
                     </div>
                 </div>
                 <div class="ck-tiempo">${minutos} min${urgente ? ' <i class="fa-solid fa-triangle-exclamation"></i>' : ''}</div>
@@ -211,10 +217,15 @@ function agruparItems(items) {
     return Array.from(grupos.values());
 }
 
-async function cambiarEstadoItem(ids, estadoActual) {
-    const estados   = ['pendiente','en_preparacion','listo','entregado'];
-    const siguiente = estados[(estados.indexOf(estadoActual) + 1) % estados.length];
+async function cambiarEstadoItem(btn, ids, estadoActual) {
+    // Transición simplificada: pendiente -> listo -> entregado (desaparece)
+    const siguiente = (estadoActual === 'listo') ? 'entregado' : 'listo';
     const itemIds   = Array.isArray(ids) ? ids : [ids];
+    
+    // Feedback visual inmediato
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
     try {
         const res  = await fetch(BASE_URL + '/api/marcar_item_listo.php', {
             method: 'POST',
@@ -222,8 +233,23 @@ async function cambiarEstadoItem(ids, estadoActual) {
             body: JSON.stringify({ item_ids: itemIds, estado: siguiente })
         });
         const json = await res.json();
-        if (!json.success) Toast.advertencia(json.message);
-    } catch(e) {}
+        if (!json.success) {
+            Toast.advertencia(json.message);
+            btn.disabled = false;
+        } else {
+            // Refrescar inmediatamente el panel completo
+            cargarPedidosAhora();
+        }
+    } catch(e) {
+        btn.disabled = false;
+    }
+}
+
+function cargarPedidosAhora() {
+    fetch(`${BASE_URL}/api/get_pedidos_activos.php?restaurante_id=${RESTAURANTE_ID}`)
+        .then(r => r.json())
+        .then(data => { if (data.success) renderPedidos(data.data); })
+        .catch(e => console.warn(e));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
