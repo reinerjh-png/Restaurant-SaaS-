@@ -6,7 +6,8 @@
  */
 session_start();
 require_once '../../config/db.php';
-requireRole(['admin', 'superadmin']);
+requireRole(['admin', 'superadmin', 'atencion']);
+$rolActual = $_SESSION['rol'] ?? '';
 
 $comprobanteId = (int)($_GET['id'] ?? 0);
 $restauranteId = $_SESSION['restaurante_id'];
@@ -68,13 +69,19 @@ require_once '../../includes/header.php';
 
             <!-- Acciones -->
             <div class="ticket-acciones" style="justify-content:flex-start;margin-bottom:20px;">
+                <?php if ($rolActual === 'atencion'): ?>
+                <a href="../atencion/historial.php" class="btn btn-ghost btn-sm">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al historial
+                </a>
+                <?php else: ?>
                 <a href="historial_comprobantes.php" class="btn btn-ghost btn-sm">
                     <i class="fa-solid fa-arrow-left"></i> Volver al historial
                 </a>
+                <?php endif; ?>
                 <button class="btn btn-primario btn-sm" onclick="window.print()">
                     <i class="fa-solid fa-print"></i> Imprimir
                 </button>
-                <?php if (!$comp['anulado']): ?>
+                <?php if (!$comp['anulado'] && in_array($rolActual, ['admin', 'superadmin'])): ?>
                 <button class="btn btn-peligro btn-sm" onclick="anularComprobante(<?= $comp['id'] ?>, '<?= htmlspecialchars(addslashes($comp['numero_comprobante'])) ?>')">
                     <i class="fa-solid fa-ban"></i> Anular
                 </button>

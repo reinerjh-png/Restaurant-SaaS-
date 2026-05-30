@@ -49,6 +49,8 @@ define('DB_CHARSET', $_ENV['DB_CHARSET'] ?? 'utf8mb4');
 // Obtén tu token en: https://api.apis.net.pe
 define('APIS_NET_TOKEN', $_ENV['APIS_NET_TOKEN'] ?? '');
 
+date_default_timezone_set('America/Lima');
+
 /**
  * Retorna una instancia singleton de PDO.
  */
@@ -61,6 +63,7 @@ function getDB(): PDO {
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '-05:00'",
         ];
         try {
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $opciones);

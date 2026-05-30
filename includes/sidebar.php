@@ -58,6 +58,7 @@ if ($rol === 'superadmin') {
         <?php elseif ($rol === 'atencion'): ?>
             <li><a href="<?= BASE_URL ?>/roles/atencion/dashboard.php"><span class="menu-icon"><i class="fa-solid fa-map-location-dot"></i></span> Mapa de Mesas</a></li>
             <li><a href="<?= BASE_URL ?>/roles/atencion/gastos.php"><span class="menu-icon"><i class="fa-solid fa-money-bill-wave"></i></span> Gastos del Día</a></li>
+            <li><a href="<?= BASE_URL ?>/roles/atencion/historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Registro de Ventas</a></li>
 
         <?php elseif ($rol === 'cocina'): ?>
             <li><a href="<?= BASE_URL ?>/roles/cocina/dashboard.php"><span class="menu-icon"><i class="fa-solid fa-kitchen-set"></i></span> Panel Cocina</a></li>
