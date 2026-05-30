@@ -652,3 +652,49 @@ ALTER TABLE pedido_items
 ALTER TABLE pedido_items
     ADD CONSTRAINT fk_pi_producto
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL;
+
+-- ============================================================
+-- 005_COMPROBANTE_SIMPLE.SQL
+-- Agrega soporte para "Comprobante Simple" (sin DNI ni RUC).
+--
+-- Cambios:
+--   1. Agrega 'simple' al ENUM tipo de comprobantes
+--   2. Hace nullable tipo_documento y numero_documento
+--      (no se requieren para comprobante simple)
+--
+-- Ejecutar UNA sola vez en phpMyAdmin.
+-- ============================================================
+
+USE restaurante_db;
+
+-- Paso 1: Ampliar el ENUM tipo para incluir 'simple'
+ALTER TABLE comprobantes
+    MODIFY COLUMN tipo ENUM('boleta','factura','simple') NOT NULL;
+
+-- Paso 2: Hacer nullable tipo_documento
+ALTER TABLE comprobantes
+    MODIFY COLUMN tipo_documento ENUM('dni','ruc') DEFAULT NULL;
+
+-- Paso 3: Hacer nullable numero_documento
+ALTER TABLE comprobantes
+    MODIFY COLUMN numero_documento VARCHAR(11) DEFAULT NULL;
+
+-- ============================================================
+-- 006_AJUSTES_COBRO.SQL
+-- Permite registrar descuentos y cargos extras en los cobros.
+-- Sistema SaaS Restaurante | R.DEV
+-- Ejecutar en phpMyAdmin o MySQL CLI sobre restaurante_db
+-- ============================================================
+
+USE restaurante_db;
+
+-- 1. Agregar columnas a la tabla pedidos
+ALTER TABLE pedidos
+    ADD COLUMN IF NOT EXISTS descuento DECIMAL(10,2) DEFAULT 0.00 AFTER total,
+    ADD COLUMN IF NOT EXISTS cargo_extra DECIMAL(10,2) DEFAULT 0.00 AFTER descuento;
+
+-- 2. Agregar columnas a la tabla comprobantes
+ALTER TABLE comprobantes
+    ADD COLUMN IF NOT EXISTS descuento DECIMAL(10,2) DEFAULT 0.00 AFTER total,
+    ADD COLUMN IF NOT EXISTS cargo_extra DECIMAL(10,2) DEFAULT 0.00 AFTER descuento;
+

@@ -23,6 +23,8 @@ $provincia     = trim($input['provincia']         ?? '');
 $departamento  = trim($input['departamento']      ?? '');
 $pagos         = $input['pagos']                  ?? [];
 $notas         = trim($input['notas']             ?? '');
+$descuento     = max(0, floatval($input['descuento'] ?? 0));
+$cargo_extra   = max(0, floatval($input['cargo_extra'] ?? 0));
 
 $usuarioId     = $_SESSION['usuario_id'];
 $restauranteId = $_SESSION['restaurante_id'];
@@ -60,7 +62,8 @@ try {
         jsonResponse(false, null, 'Pedido no encontrado o ya cobrado.');
     }
 
-    $total = floatval($pedido['total']);
+    $totalOriginal = floatval($pedido['total']);
+    $totalFinal = max(0, $totalOriginal + $cargo_extra - $descuento);
 
     // 2. Obtener configuración de facturación (crea si no existe)
     $stCfg = $db->prepare("SELECT * FROM facturacion_config WHERE restaurante_id = ? FOR UPDATE");
@@ -101,8 +104,8 @@ try {
     $items = $stItems->fetchAll();
 
     // 5. Calcular subtotal e IGV (18%)
-    $subtotal = round($total / 1.18, 2);
-    $igv      = round($total - $subtotal, 2);
+    $subtotal = round($totalFinal / 1.18, 2);
+    $igv      = round($totalFinal - $subtotal, 2);
 
     // 6. Insertar comprobante
     $stComp = $db->prepare("
@@ -110,8 +113,8 @@ try {
             (restaurante_id, pedido_id, usuario_id, tipo, serie, correlativo, numero_comprobante,
              tipo_documento, numero_documento, nombre_cliente, direccion_cliente,
              distrito, provincia, departamento,
-             subtotal, igv, total, items_json, pagos_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             subtotal, igv, total, descuento, cargo_extra, items_json, pagos_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stComp->execute([
         $restauranteId,
@@ -130,7 +133,9 @@ try {
         $departamento ?: null,
         $subtotal,
         $igv,
-        $total,
+        $totalFinal,
+        $descuento,
+        $cargo_extra,
         json_encode($items, JSON_UNESCAPED_UNICODE),
         json_encode($pagos, JSON_UNESCAPED_UNICODE),
     ]);
@@ -158,9 +163,9 @@ try {
         jsonResponse(false, null, 'No se registraron pagos válidos.');
     }
 
-    // 8. Marcar pedido como cobrado y liberar mesa
-    $stCobrar = $db->prepare("UPDATE pedidos SET estado = 'cobrado', notas = ? WHERE id = ?");
-    $stCobrar->execute([$notas ?: null, $pedidoId]);
+    // 8. Marcar pedido como cobrado, guardando descuento y total final
+    $stCobrar = $db->prepare("UPDATE pedidos SET estado = 'cobrado', notas = ?, descuento = ?, cargo_extra = ?, total = ? WHERE id = ?");
+    $stCobrar->execute([$notas ?: null, $descuento, $cargo_extra, $totalFinal, $pedidoId]);
 
     if ($pedido['mesa_id']) {
         $db->prepare("UPDATE mesas SET estado = 'libre' WHERE id = ?")->execute([$pedido['mesa_id']]);

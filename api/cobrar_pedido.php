@@ -23,6 +23,9 @@ $db = getDB();
 try {
     $db->beginTransaction();
 
+    $descuento   = max(0, floatval($input['descuento'] ?? 0));
+    $cargo_extra = max(0, floatval($input['cargo_extra'] ?? 0));
+
     // Verificar pedido activo
     $stPed = $db->prepare("
         SELECT pe.id, pe.total, pe.mesa_id
@@ -36,6 +39,9 @@ try {
         $db->rollBack();
         jsonResponse(false, null, 'Pedido no encontrado o ya cobrado');
     }
+
+    $totalOriginal = floatval($pedido['total']);
+    $totalFinal = max(0, $totalOriginal + $cargo_extra - $descuento);
 
     // Métodos de pago válidos
     $metodosValidos = ['efectivo','yape','transferencia','tarjeta','otro'];
@@ -61,9 +67,9 @@ try {
         jsonResponse(false, null, 'No se registraron pagos válidos');
     }
 
-    // Marcar pedido como cobrado
-    $stCobrar = $db->prepare("UPDATE pedidos SET estado = 'cobrado', notas = ? WHERE id = ?");
-    $stCobrar->execute([$notas ?: null, $pedidoId]);
+    // Marcar pedido como cobrado y actualizar con el nuevo total, descuento y cargo
+    $stCobrar = $db->prepare("UPDATE pedidos SET estado = 'cobrado', notas = ?, descuento = ?, cargo_extra = ?, total = ? WHERE id = ?");
+    $stCobrar->execute([$notas ?: null, $descuento, $cargo_extra, $totalFinal, $pedidoId]);
 
     // Liberar la mesa
     if ($pedido['mesa_id']) {

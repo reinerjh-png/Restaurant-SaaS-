@@ -198,6 +198,18 @@ require_once '../../includes/header.php';
 
         <!-- Totales -->
         <div class="ticket-totales ticket-section">
+            <?php if (isset($comp['cargo_extra']) && $comp['cargo_extra'] > 0): ?>
+            <div class="ticket-total-row">
+                <span>Cargo Extra:</span>
+                <span>S/ <?= number_format($comp['cargo_extra'], 2) ?></span>
+            </div>
+            <?php endif; ?>
+            <?php if (isset($comp['descuento']) && $comp['descuento'] > 0): ?>
+            <div class="ticket-total-row">
+                <span>Descuento:</span>
+                <span>-S/ <?= number_format($comp['descuento'], 2) ?></span>
+            </div>
+            <?php endif; ?>
             <div class="ticket-total-row">
                 <span>Op. Gravada:</span>
                 <span>S/ <?= number_format($comp['subtotal'], 2) ?></span>
