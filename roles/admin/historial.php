@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/historial.php — Historial de pedidos cobrados
  * Sistema SaaS Restaurante | R.DEV
@@ -17,10 +17,14 @@ $tipo   = $_GET['tipo']    ?? '';
 $sql = "
     SELECT pe.id, pe.tipo, pe.total, pe.created_at, pe.updated_at,
            m.numero AS mesa_numero,
-           u.nombre AS cajero
+           u.nombre AS cajero,
+           c.id AS comprobante_id,
+           c.numero_comprobante,
+           c.tipo AS comprobante_tipo
     FROM pedidos pe
     LEFT JOIN mesas m ON m.id = pe.mesa_id
     JOIN usuarios u ON u.id = pe.usuario_id
+    LEFT JOIN comprobantes c ON c.pedido_id = pe.id
     WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado'
       AND DATE(pe.created_at) = ?
 ";
@@ -89,7 +93,8 @@ require_once '../../includes/header.php';
                                 <th>Atendido por</th>
                                 <th>Cobrado</th>
                                 <th>Total</th>
-                                <th>Detalle</th>
+                                <th>Comprobante</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,9 +112,29 @@ require_once '../../includes/header.php';
                                 <td style="font-size:.8rem;color:var(--text-secondary);"><?= date('H:i', strtotime($p['updated_at'])) ?></td>
                                 <td><strong style="color:var(--success);">S/ <?= number_format($p['total'], 2) ?></strong></td>
                                 <td>
-                                    <button class="btn btn-ghost btn-sm" onclick="verDetallePedido(<?= $p['id'] ?>)" title="Ver detalle">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </button>
+                                    <?php if ($p['comprobante_id']): ?>
+                                    <span class="badge badge-verde" style="font-size:0.75rem;"><i class="fa-solid fa-file-invoice"></i> <?= htmlspecialchars($p['numero_comprobante']) ?></span>
+                                    <?php else: ?>
+                                    <span style="color:var(--text-muted);font-size:0.8rem;">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div style="display:flex; gap:6px;">
+                                        <button class="btn btn-ghost btn-sm" onclick="verDetallePedido(<?= $p['id'] ?>)" title="Ver detalle">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <?php if ($p['comprobante_id']): ?>
+                                        <a href="ver_comprobante.php?id=<?= $p['comprobante_id'] ?>" class="btn btn-ghost btn-sm" title="Ver / Imprimir Comprobante">
+                                            <i class="fa-solid fa-print"></i>
+                                        </a>
+                                        <?php endif; ?>
+                                        <button class="btn btn-ghost btn-sm" style="color:var(--primary);" onclick="reabrirPedido(<?= $p['id'] ?>)" title="Modificar Pedido">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="eliminarPedido(<?= $p['id'] ?>)" title="Eliminar Venta">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -148,13 +173,22 @@ async function verDetallePedido(id) {
     document.getElementById('modal-hist-titulo').innerHTML = '<i class="fa-solid fa-receipt"></i> Pedido #' + id;
     document.getElementById('modal-hist-body').innerHTML = '<div class="text-center"><div class="spinner"></div></div>';
 
+    const metodoLabel = {
+        efectivo: 'Efectivo',
+        yape: 'Yape / Plin',
+        transferencia: 'Transferencia',
+        tarjeta: 'Tarjeta',
+        otro: 'Otro'
+    };
+
     try {
         const res  = await fetch(`${BASE_URL}/api/get_pedido_detalle.php?id=${id}`);
         const json = await res.json();
         if (!json.success) { document.getElementById('modal-hist-body').innerHTML = '<p>Error al cargar</p>'; return; }
         const p = json.data;
 
-        let html = `<div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;">
+        // Cabecera: badges
+        let html = `<div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <span class="badge badge-gris"><i class="fa-solid fa-hashtag"></i>${p.id}</span>
             <span class="badge ${p.tipo==='aqui'?'badge-azul':'badge-naranja'}">
                 <i class="fa-solid ${p.tipo==='aqui'?'fa-house':'fa-bag-shopping'}"></i>
@@ -163,6 +197,8 @@ async function verDetallePedido(id) {
             ${p.mesa_numero ? `<span class="badge badge-gris"><i class="fa-solid fa-chair"></i> Mesa ${p.mesa_numero}</span>` : ''}
         </div>`;
 
+        // Items
+        html += `<div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Productos</div>`;
         p.items.forEach(item => {
             html += `<div class="pedido-item">
                 <div style="flex:1;">
@@ -174,15 +210,89 @@ async function verDetallePedido(id) {
             </div>`;
         });
 
-        html += `<div class="pedido-total" style="margin-top:16px;padding-top:12px;border-top:2px solid var(--border);">
+        // Subtotal de ítems
+        const subtotalItems = p.items.reduce((acc, i) => acc + parseFloat(i.subtotal), 0);
+        const descuento   = parseFloat(p.descuento   || 0);
+        const cargoExtra  = parseFloat(p.cargo_extra || 0);
+
+        html += `<div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border);">`;
+
+        html += `<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--text-secondary);margin-bottom:4px;">
+            <span>Subtotal productos</span><span>S/ ${subtotalItems.toFixed(2)}</span>
+        </div>`;
+
+        if (descuento > 0) {
+            html += `<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--danger);margin-bottom:4px;">
+                <span><i class="fa-solid fa-tag"></i> Descuento</span><span>− S/ ${descuento.toFixed(2)}</span>
+            </div>`;
+        }
+
+        if (cargoExtra > 0) {
+            html += `<div style="display:flex;justify-content:space-between;font-size:.875rem;color:var(--warning,#f59e0b);margin-bottom:4px;">
+                <span><i class="fa-solid fa-circle-plus"></i> Cargo extra</span><span>+ S/ ${cargoExtra.toFixed(2)}</span>
+            </div>`;
+        }
+
+        html += `<div class="pedido-total" style="margin-top:10px;">
             <span>TOTAL</span>
             <span style="color:var(--success);">S/ ${parseFloat(p.total).toFixed(2)}</span>
-        </div>`;
+        </div></div>`;
+
+        // Sección de pagos
+        if (p.pagos && p.pagos.length > 0) {
+            html += `<div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border);">
+                <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Pagos realizados</div>`;
+            p.pagos.forEach(pg => {
+                html += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:.875rem;margin-bottom:6px;">
+                    <span style="color:var(--text-primary);">
+                        <i class="fa-solid fa-circle-check" style="color:var(--success);margin-right:5px;"></i>
+                        ${metodoLabel[pg.metodo] || pg.metodo}
+                        ${pg.referencia ? `<span style="color:var(--text-muted);font-size:.75rem;"> · ${pg.referencia}</span>` : ''}
+                    </span>
+                    <strong style="color:var(--success);">S/ ${parseFloat(pg.monto).toFixed(2)}</strong>
+                </div>`;
+            });
+            html += `</div>`;
+        }
 
         document.getElementById('modal-hist-body').innerHTML = html;
     } catch(e) {
         document.getElementById('modal-hist-body').innerHTML = '<p>Error de conexión</p>';
     }
+}
+
+function reabrirPedido(id) {
+    if(!confirm('¿Estás seguro de reabrir este pedido para modificarlo? Se eliminarán los pagos registrados (y si tiene comprobante, se anulará) y volverá a la pantalla de Atención.')) return;
+    
+    fetch(BASE_URL + '/api/reabrir_venta.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    }).then(r => r.json()).then(res => {
+        if(res.success) {
+            Toast.exito('Pedido reabierto.');
+            setTimeout(() => location.href = BASE_URL + '/roles/atencion/index.php', 1500);
+        } else {
+            Toast.error(res.message);
+        }
+    }).catch(e => Toast.error('Error de conexión'));
+}
+
+function eliminarPedido(id) {
+    if(!confirm('¿Estás seguro de eliminar esta venta? Se anulará el comprobante y se restará del total del día.')) return;
+    
+    fetch(BASE_URL + '/api/eliminar_venta.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    }).then(r => r.json()).then(res => {
+        if(res.success) {
+            Toast.exito('Venta eliminada.');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            Toast.error(res.message);
+        }
+    }).catch(e => Toast.error('Error de conexión'));
 }
 </script>
 

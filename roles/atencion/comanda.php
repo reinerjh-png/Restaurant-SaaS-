@@ -190,15 +190,15 @@ require_once '../../includes/header.php';
             </button>
         </div>
 
-        <!-- Items del pedido -->
-        <div id="lista-items" style="flex:1;overflow-y:auto;padding:12px 16px;">
+        <!-- Items del pedido (ya enviados) -->
+        <div id="lista-items" style="flex:1;overflow-y:auto;padding:12px 16px;min-height:0;">
             <?php if ($items): ?>
             <?php foreach ($items as $item): ?>
             <div class="pedido-item" id="item-<?= $item['id'] ?>">
                 <div style="flex:1;">
                     <div class="pedido-item-nombre"><?= $item['cantidad'] ?>x <?= htmlspecialchars($item['producto_nombre']) ?></div>
                     <?php if ($item['opciones_texto']): ?>
-                    <div class="pedido-item-opciones">· <?= htmlspecialchars($item['opciones_texto']) ?></div>
+                    <div class="pedido-item-opciones">&middot; <?= htmlspecialchars($item['opciones_texto']) ?></div>
                     <?php endif; ?>
                 </div>
                 <div class="pedido-item-precio">S/ <?= number_format($item['subtotal'],2) ?></div>
@@ -207,13 +207,14 @@ require_once '../../includes/header.php';
             <?php else: ?>
             <div class="empty-state" style="padding:30px 0;">
                 <div class="icon"><i class="fa-solid fa-utensils"></i></div>
-                <p>Agrega platos del menú</p>
+                <p>Agrega platos del men&uacute;</p>
             </div>
             <?php endif; ?>
-        </div>
+        </div><!-- /#lista-items -->
 
-        <!-- Nuevos items pendientes -->
-        <div id="lista-nuevos" style="padding:0 16px;border-top:2px dashed var(--warning);display:none;">
+        <!-- Nuevos items pendientes (max-height con scroll para no empujar botones) -->
+        <div id="lista-nuevos" style="padding:0 16px;border-top:2px dashed var(--warning);display:none;max-height:220px;overflow-y:auto;flex-shrink:0;">
+
             <div style="font-size:.75rem;font-weight:700;color:var(--warning);padding:8px 0;">
                 <i class="fa-solid fa-hourglass-half"></i> Por enviar a cocina:
             </div>
@@ -232,11 +233,17 @@ require_once '../../includes/header.php';
             <button class="btn btn-primario btn-full btn-lg" id="btn-enviar" onclick="enviarACocina()" disabled>
                 <i class="fa-solid fa-paper-plane"></i> Enviar a cocina
             </button>
-            <a href="cobrar.php?pedido_id=<?= $pedidoId ?>"
-               class="btn btn-exito btn-full mt-8"
-               style="min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--radius-md);font-weight:700;">
-                <i class="fa-solid fa-sack-dollar"></i> Ir a cobrar
-            </a>
+            <div id="cobrar-wrap" style="margin-top:8px;">
+                <a href="cobrar.php?pedido_id=<?= $pedidoId ?>"
+                   id="btn-cobrar"
+                   class="btn btn-exito btn-full"
+                   style="min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--radius-md);font-weight:700;">
+                    <i class="fa-solid fa-sack-dollar"></i> Ir a cobrar
+                </a>
+                <div id="cobrar-aviso" style="display:none;margin-top:6px;font-size:.75rem;color:var(--warning);text-align:center;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Env&iacute;a los platos a cocina antes de cobrar
+                </div>
+            </div>
         </div>
     </div>
 
@@ -330,7 +337,7 @@ function renderNuevosItems() {
                 <textarea
                     id="nota-item-${i}"
                     rows="1"
-                    placeholder="Nota para cocina (opcional)…"
+                    placeholder="Nota para cocina (opcional)\u2026"
                     oninput="actualizarNota(${i}, this.value)"
                     style="width:100%;font-size:.78rem;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:6px 8px;background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:var(--font);outline:none;transition:border-color var(--transition);"
                     onfocus="this.style.borderColor='var(--warning)'"
@@ -341,6 +348,8 @@ function renderNuevosItems() {
     document.getElementById('btn-enviar').disabled = false;
     document.getElementById('nuevo-total-row').style.display = 'flex';
     document.getElementById('nuevo-total-val').textContent = `S/ ${nuevoTotal.toFixed(2)}`;
+    // Bloquear "Ir a cobrar" mientras haya ítems pendientes
+    actualizarEstadoCobrar();
 }
 
 function actualizarNota(idx, valor) {
@@ -351,6 +360,21 @@ function quitarNuevo(idx) {
     nuevoTotal -= nuevosItems[idx].precio;
     nuevosItems.splice(idx, 1);
     renderNuevosItems();
+}
+
+function actualizarEstadoCobrar() {
+    const btnCobrar = document.getElementById('btn-cobrar');
+    const aviso     = document.getElementById('cobrar-aviso');
+    const hayPendientes = nuevosItems.length > 0;
+    if (hayPendientes) {
+        btnCobrar.style.opacity = '0.4';
+        btnCobrar.style.pointerEvents = 'none';
+        aviso.style.display = 'block';
+    } else {
+        btnCobrar.style.opacity = '';
+        btnCobrar.style.pointerEvents = '';
+        aviso.style.display = 'none';
+    }
 }
 
 function actualizarCountItems() {

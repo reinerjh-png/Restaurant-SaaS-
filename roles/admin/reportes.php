@@ -124,6 +124,8 @@ require_once '../../includes/header.php';
                     ['efectivo','fa-money-bill-wave','Efectivo'],
                     ['yape','fa-mobile-screen','Yape'],
                     ['transferencia','fa-building-columns','Transferencia'],
+                    ['tarjeta','fa-credit-card','Tarjeta'],
+                    ['otro','fa-rotate','Otro'],
                 ];
                 foreach ($metodos2 as [$key,$icon,$label]): ?>
                 <div class="stat-card naranja">

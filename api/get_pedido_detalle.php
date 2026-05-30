@@ -15,9 +15,11 @@ if (!$pedidoId) jsonResponse(false, null, 'ID requerido');
 
 $db = getDB();
 
-// Pedido
+// Pedido (incluye descuento y cargo_extra)
 $stPed = $db->prepare("
-    SELECT pe.id, pe.tipo, pe.estado, pe.total, pe.created_at,
+    SELECT pe.id, pe.tipo, pe.estado, pe.total,
+           pe.descuento, pe.cargo_extra,
+           pe.created_at,
            m.numero AS mesa_numero
     FROM pedidos pe
     LEFT JOIN mesas m ON m.id = pe.mesa_id
@@ -27,13 +29,13 @@ $stPed->execute([$pedidoId, $restauranteId]);
 $pedido = $stPed->fetch();
 if (!$pedido) jsonResponse(false, null, 'Pedido no encontrado');
 
-// Items
+// Items — LEFT JOIN para que productos eliminados sigan apareciendo con nombre snapshot
 $stItems = $db->prepare("
     SELECT pi.id, pi.cantidad, pi.precio_unitario, pi.subtotal, pi.notas, pi.estado,
-           pr.nombre,
+           COALESCE(pi.nombre_producto, pr.nombre, '(Producto eliminado)') AS nombre,
            GROUP_CONCAT(ov.valor SEPARATOR ' · ') AS opciones
     FROM pedido_items pi
-    JOIN productos pr ON pr.id = pi.producto_id
+    LEFT JOIN productos pr ON pr.id = pi.producto_id
     LEFT JOIN pedido_item_opciones pio ON pio.item_id = pi.id
     LEFT JOIN opciones_valor ov ON ov.id = pio.valor_id
     WHERE pi.pedido_id = ?
