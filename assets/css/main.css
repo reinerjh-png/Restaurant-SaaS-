@@ -1086,6 +1086,7 @@ tbody td {
   margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1253,10 +1254,30 @@ tbody td {
 
 /* ── TARJETA DE COCINA ──────────────────────────────────────── */
 .cocina-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  padding: 16px;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 0 8px 0;
+  height: 100%;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cocina-grid::-webkit-scrollbar {
+  height: 10px;
+}
+
+.cocina-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.cocina-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
 }
 
 .cocina-card {
@@ -1265,6 +1286,10 @@ tbody td {
   border: 2px solid #0F3460;
   overflow: hidden;
   transition: border-color var(--transition);
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
 }
 
 .cocina-card.urgente {
@@ -1285,12 +1310,13 @@ tbody td {
 }
 
 .cocina-card-header {
-  padding: 14px 18px;
+  padding: 4px 8px;
   background: #0F3460;
   display: flex;
   align-items: center;
   justify-content: space-between;
   color: #fff;
+  flex-shrink: 0;
 }
 
 .cocina-card.urgente .cocina-card-header {
@@ -1821,6 +1847,7 @@ tbody td {
   margin-bottom: 24px;
   background: linear-gradient(to right, #ffffff, #e0e0e0);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -2315,16 +2342,16 @@ tbody td {
 
 /* Cocina — botones de item */
 .ck-btn-listo {
-  padding: 5px 12px;
+  padding: 2px 4px;
   border-radius: var(--radius-sm);
   border: none;
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   font-weight: 700;
   cursor: pointer;
   transition: all var(--transition);
   flex-shrink: 0;
   font-family: var(--font);
-  min-height: 32px;
+  min-height: 20px;
 }
 
 .ck-btn.pendiente {
@@ -2344,14 +2371,29 @@ tbody td {
 
 /* Ítems de cocina — mismos que los de global pero compatibles */
 .ck-items {
-  padding: 14px 18px;
+  padding: 4px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ck-items::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ck-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ck-items::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
 .ck-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 10px 0;
+  gap: 4px;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255, 255, 255, .07);
 }
 
@@ -2362,14 +2404,14 @@ tbody td {
 .ck-qty {
   background: var(--primary);
   color: #fff;
-  width: 28px;
-  height: 28px;
+  width: 18px;
+  height: 18px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   flex-shrink: 0;
 }
 
@@ -2379,24 +2421,24 @@ tbody td {
 
 .ck-nombre {
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
 .ck-opciones {
   color: rgba(255, 255, 255, .5);
-  font-size: 0.75rem;
-  margin-top: 3px;
+  font-size: 0.6rem;
+  margin-top: 2px;
 }
 
 .ck-mesa {
-  font-size: 1.6rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #fff;
 }
 
 .ck-tipo {
-  font-size: 0.78rem;
+  font-size: 0.6rem;
   opacity: 0.8;
   margin-top: 2px;
   color: rgba(255, 255, 255, .8);
@@ -2405,8 +2447,8 @@ tbody td {
 .ck-tiempo {
   background: rgba(255, 255, 255, .15);
   border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 0.78rem;
+  padding: 2px 4px;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #fff;
 }

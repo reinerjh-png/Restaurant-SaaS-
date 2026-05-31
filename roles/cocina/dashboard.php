@@ -44,7 +44,7 @@ require_once '../../includes/header.php';
     </div>
 </div>
 
-<div id="cocina-contenido" style="padding:16px;">
+<div id="cocina-contenido" style="padding: 4px 16px 16px; height: calc(100vh - 110px); display: flex; flex-direction: column; overflow: hidden;">
     <div class="cocina-vacia">
         <div class="icon"><i class="fa-solid fa-hourglass-half"></i></div>
         <p>Cargando pedidos...</p>
@@ -183,12 +183,12 @@ function renderPedidos(pedidos) {
             <div class="cocina-card-header">
                 <div>
                     <div class="ck-mesa">${p.mesa_numero ? 'Mesa ' + p.mesa_numero : 'Llevar'}</div>
-                    <div class="ck-tipo" style="margin-top:4px;">
-                        <span style="color: ${tipoColor}; background: ${tipoBg}; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;">
+                    <div class="ck-tipo" style="margin-top:2px;">
+                        <span style="color: ${tipoColor}; background: ${tipoBg}; padding: 1px 3px; border-radius: 4px; font-weight: bold; font-size: 0.6rem; display: inline-flex; align-items: center; gap: 2px;">
                             <i class="fa-solid ${p.tipo === 'aqui' ? 'fa-house' : 'fa-bag-shopping'}"></i>
                             ${p.tipo === 'aqui' ? 'Comer aquí' : 'Para llevar'}
                         </span>
-                        <span style="opacity: 0.7; margin-left: 6px; font-size: 0.85rem;">· #${p.id}</span>
+                        <span style="opacity: 0.7; margin-left: 4px; font-size: 0.6rem;">· #${p.id}</span>
                     </div>
                 </div>
                 <div class="ck-tiempo">${minutos} min${urgente ? ' <i class="fa-solid fa-triangle-exclamation"></i>' : ''}</div>
