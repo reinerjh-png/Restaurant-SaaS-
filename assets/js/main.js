@@ -126,9 +126,9 @@ async function mostrarOpcionesSecuenciales(productoId, nombreProducto) {
 
     const selecciones = [];
     for (const grupo of json.data) {
-        const valorId = await abrirModalOpcion(grupo, nombreProducto, json.data.indexOf(grupo) + 1, json.data.length);
-        if (valorId === null) return null; // usuario canceló
-        selecciones.push({ grupo_id: grupo.id, valor_id: valorId });
+        const seleccion = await abrirModalOpcion(grupo, nombreProducto, json.data.indexOf(grupo) + 1, json.data.length);
+        if (seleccion === null) return null; // usuario canceló
+        selecciones.push({ grupo_id: grupo.id, valor_id: seleccion.id, texto: seleccion.texto });
     }
     return selecciones;
 }
@@ -147,6 +147,7 @@ function abrirModalOpcion(grupo, nombreProducto, paso, total) {
         lista.innerHTML       = '';
 
         let valorSeleccionado = null;
+        let textoSeleccionado = null;
 
         grupo.valores.forEach(val => {
             const item = document.createElement('div');
@@ -160,6 +161,7 @@ function abrirModalOpcion(grupo, nombreProducto, paso, total) {
                 lista.querySelectorAll('.opcion-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 valorSeleccionado = val.id;
+                textoSeleccionado = val.valor;
             });
             lista.appendChild(item);
         });
@@ -170,7 +172,7 @@ function abrirModalOpcion(grupo, nombreProducto, paso, total) {
                 return;
             }
             Modal.cerrar('modal-opciones');
-            resolve(valorSeleccionado);
+            resolve({ id: valorSeleccionado, texto: textoSeleccionado });
         };
 
         btnCan.onclick = () => {

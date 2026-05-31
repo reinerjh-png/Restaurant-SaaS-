@@ -205,9 +205,11 @@ require_once '../../includes/header.php';
             </div>
             <?php endforeach; ?>
             <?php else: ?>
-            <div class="empty-state" style="padding:30px 0;">
-                <div class="icon"><i class="fa-solid fa-utensils"></i></div>
-                <p>Agrega platos del men&uacute;</p>
+            <div id="empty-state-items" style="text-align:center; padding:14px 20px; color:var(--text-secondary);">
+                <div style="font-size:1.6rem; color:var(--text-muted); margin-bottom:6px;">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <p style="font-size:0.78rem;">Agrega platos del men&uacute;</p>
             </div>
             <?php endif; ?>
         </div><!-- /#lista-items -->
@@ -297,7 +299,7 @@ async function agregarProducto(producto) {
         precio:       parseFloat(producto.precio),
         cantidad:     1,
         selecciones:  selecciones,
-        opciones_str: selecciones.length ? '(opciones seleccionadas)' : '',
+        opciones_str: selecciones.length ? selecciones.map(s => s.texto).join(' · ') : '',
         notas:        '',
     };
 
@@ -309,47 +311,111 @@ async function agregarProducto(producto) {
 
 function renderNuevosItems() {
     const cont = document.getElementById('lista-nuevos');
+    const emptyState = document.getElementById('empty-state-items');
+    const listaItems = document.getElementById('lista-items');
+
     actualizarCountItems();
     if (!nuevosItems.length) {
         cont.style.display = 'none';
         document.getElementById('btn-enviar').disabled = true;
         document.getElementById('nuevo-total-row').style.display = 'none';
+        
+        if (emptyState) {
+            emptyState.style.display = 'block';
+            listaItems.style.display = 'block';
+            listaItems.style.flex = '1';
+        }
+        cont.style.flex = 'none';
+        cont.style.maxHeight = '220px';
         return;
     }
-    cont.style.display = 'block';
-    cont.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:var(--warning);padding:8px 0;">
+
+    if (emptyState) {
+        emptyState.style.display = 'none';
+        listaItems.style.display = 'none';
+        cont.style.flex = '1';
+        cont.style.maxHeight = 'none';
+        cont.style.minHeight = '0';
+    }
+
+    cont.style.display = 'flex';
+    cont.style.flexDirection = 'column';
+    
+    cont.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:var(--warning);padding:8px 0;flex-shrink:0;">
         <i class="fa-solid fa-hourglass-half"></i> Por enviar a cocina:
     </div>`;
+
+    // Agrupar por clave única: nombre + opciones (pero separados siempre si tienen opciones)
+    const grupos = new Map();
     nuevosItems.forEach((it, i) => {
+        // Si tiene opciones seleccionadas, forzamos una clave única con el índice 'i' para que no se agrupe
+        const clave = (it.selecciones && it.selecciones.length > 0) 
+            ? 'unique_' + i 
+            : it.nombre + '||' + it.opciones_str;
+            
+        if (grupos.has(clave)) {
+            const g = grupos.get(clave);
+            g.cantidad++;
+            g.subtotal += it.precio;
+            g.indices.push(i);
+        } else {
+            grupos.set(clave, {
+                nombre:      it.nombre,
+                opciones_str:it.opciones_str,
+                precio:      it.precio,
+                subtotal:    it.precio,
+                cantidad:    1,
+                indices:     [i],
+                notas:       it.notas,
+            });
+        }
+    });
+
+    let gi = 0;
+    grupos.forEach((g) => {
         cont.innerHTML += `
-            <div class="pedido-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+            <div class="pedido-item" style="flex-direction:column;align-items:stretch;gap:5px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <div style="flex:1;">
-                        <div class="pedido-item-nombre">1x ${it.nombre}</div>
-                        ${it.opciones_str ? `<div class="pedido-item-opciones">${it.opciones_str}</div>` : ''}
+                        <div class="pedido-item-nombre">${g.cantidad}x ${g.nombre}</div>
+                        ${g.opciones_str ? `<div class="pedido-item-opciones">${g.opciones_str}</div>` : ''}
                     </div>
-                    <span class="pedido-item-precio">S/ ${it.precio.toFixed(2)}</span>
-                    <button onclick="quitarNuevo(${i})"
-                        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.875rem;flex-shrink:0;min-height:32px;display:flex;align-items:center;">
+                    <span class="pedido-item-precio">S/ ${g.subtotal.toFixed(2)}</span>
+                    <button onclick="quitarGrupo(${JSON.stringify(g.indices)})"
+                        style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.875rem;flex-shrink:0;min-height:28px;display:flex;align-items:center;">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <textarea
-                    id="nota-item-${i}"
+                    id="nota-grupo-${gi}"
                     rows="1"
                     placeholder="Nota para cocina (opcional)\u2026"
-                    oninput="actualizarNota(${i}, this.value)"
-                    style="width:100%;font-size:.78rem;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:6px 8px;background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:var(--font);outline:none;transition:border-color var(--transition);"
+                    oninput="actualizarNotaGrupo(${JSON.stringify(g.indices)}, this.value)"
+                    style="width:100%;font-size:.78rem;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:5px 8px;background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:var(--font);outline:none;transition:border-color var(--transition);"
                     onfocus="this.style.borderColor='var(--warning)'"
                     onblur="this.style.borderColor='var(--border)'"
-                >${it.notas}</textarea>
+                >${g.notas}</textarea>
             </div>`;
+        gi++;
     });
+
     document.getElementById('btn-enviar').disabled = false;
     document.getElementById('nuevo-total-row').style.display = 'flex';
     document.getElementById('nuevo-total-val').textContent = `S/ ${nuevoTotal.toFixed(2)}`;
-    // Bloquear "Ir a cobrar" mientras haya ítems pendientes
     actualizarEstadoCobrar();
+}
+
+function actualizarNotaGrupo(indices, valor) {
+    indices.forEach(i => { if (nuevosItems[i]) nuevosItems[i].notas = valor.trim(); });
+}
+
+function quitarGrupo(indices) {
+    // Quitar de mayor a menor índice para no desfasar el array
+    [...indices].sort((a, b) => b - a).forEach(i => {
+        nuevoTotal -= nuevosItems[i].precio;
+        nuevosItems.splice(i, 1);
+    });
+    renderNuevosItems();
 }
 
 function actualizarNota(idx, valor) {
