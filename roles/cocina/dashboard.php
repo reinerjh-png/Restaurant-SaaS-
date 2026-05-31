@@ -140,7 +140,10 @@ function renderPedidos(pedidos) {
     const grid = document.createElement('div');
     grid.className = 'cocina-grid';
 
-    pedidos.forEach(p => {
+    // Invertimos el orden para mostrar las mesas nuevas primero
+    const pedidosMostrados = [...pedidos].reverse();
+
+    pedidosMostrados.forEach(p => {
         const minutos = parseInt(p.minutos_transcurridos) || 0;
         const urgente = minutos >= 20;
 
