@@ -172,6 +172,10 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         box-sizing: border-box;
+        color: #000 !important; /* Forzar negro absoluto para evitar tramados grises borrosos */
+        text-shadow: none !important;
+        -webkit-font-smoothing: none !important; /* Desactiva el suavizado en Chrome/Edge */
+        -moz-osx-font-smoothing: grayscale !important; /* Desactiva el subpixel rendering en Firefox */
     }
 
     /* Ocultar TODO visualmente pero mantener el layout base */
@@ -196,10 +200,10 @@
     }
 
     .ticket-wrapper {
-        width: 72mm;           /* ancho efectivo en papel 80mm */
-        max-width: 72mm;
-        margin: 0 auto;
-        padding: 4mm 4mm 6mm;
+        width: 100% !important; /* Adaptarse al ancho de impresión sin forzar una medida fija que cause escalado */
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         box-shadow: none !important;
         border-radius: 0 !important;
         font-size: 9pt;
