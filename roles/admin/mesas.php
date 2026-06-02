@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * roles/admin/mesas.php — Gestión de mesas + mapa interactivo
  * Sistema SaaS Restaurante | R.DEV

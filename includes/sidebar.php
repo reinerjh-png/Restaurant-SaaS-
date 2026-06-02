@@ -53,6 +53,7 @@ if ($rol === 'superadmin') {
             <li><a href="<?= BASE_URL ?>/roles/admin/gastos.php"><span class="menu-icon"><i class="fa-solid fa-money-bill-wave"></i></span> Gastos</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/historial.php"><span class="menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span> Historial</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/historial_comprobantes.php"><span class="menu-icon"><i class="fa-solid fa-file-invoice"></i></span> Comprobantes</a></li>
+            <li><a href="<?= BASE_URL ?>/roles/admin/caja.php"><span class="menu-icon"><i class="fa-solid fa-cash-register"></i></span> Caja</a></li>
             <li><a href="<?= BASE_URL ?>/roles/admin/config_facturacion.php"><span class="menu-icon"><i class="fa-solid fa-store"></i></span> Mi Restaurante</a></li>
 
         <?php elseif ($rol === 'atencion'): ?>

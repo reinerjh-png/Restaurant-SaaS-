@@ -10,9 +10,100 @@ requireRole(['atencion', 'admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
-$fecha  = $_GET['fecha']   ?? date('Y-m-d');
+$fechaParam  = $_GET['fecha']   ?? null;
 $buscar = trim($_GET['q']  ?? '');
 $tipo   = $_GET['tipo']    ?? '';
+$turnoIdParam = isset($_GET['turno_id']) ? (int)$_GET['turno_id'] : null;
+
+$filtroTurno = false;
+$inicioRango = null;
+$finRango = null;
+$tituloTurno = '';
+$turnoId = null;
+$turnoAnteriorId = null;
+$turnoSiguienteId = null;
+$esHistorico = false; // Modo visualización de turno pasado
+
+if ($turnoIdParam) {
+    // Modo: ver un turno específico por ID
+    $stTurnoEsp = $db->prepare("
+        SELECT t.*, u.nombre AS abierto_por
+        FROM turnos t
+        JOIN usuarios u ON u.id = t.usuario_id
+        WHERE t.id = ? AND t.restaurante_id = ? AND t.fin IS NOT NULL
+    ");
+    $stTurnoEsp->execute([$turnoIdParam, $restauranteId]);
+    $turnoEsp = $stTurnoEsp->fetch();
+
+    if ($turnoEsp) {
+        $filtroTurno = true;
+        $esHistorico = true;
+        $inicioRango = $turnoEsp['inicio'];
+        $finRango = $turnoEsp['fin'];
+        $turnoId = $turnoEsp['id'];
+        $tituloTurno = "Turno cerrado &mdash; " . date('d/m H:i', strtotime($inicioRango)) . " &rarr; " . date('H:i', strtotime($finRango));
+        $fecha = date('Y-m-d', strtotime($inicioRango));
+
+        // Buscar turno anterior (ID menor más cercano cerrado)
+        $stPrev = $db->prepare("SELECT id FROM turnos WHERE restaurante_id = ? AND fin IS NOT NULL AND id < ? ORDER BY id DESC LIMIT 1");
+        $stPrev->execute([$restauranteId, $turnoId]);
+        $turnoAnteriorId = $stPrev->fetchColumn();
+
+        // Buscar turno siguiente (ID mayor más cercano)
+        $stNext = $db->prepare("SELECT id FROM turnos WHERE restaurante_id = ? AND id > ? ORDER BY id ASC LIMIT 1");
+        $stNext->execute([$restauranteId, $turnoId]);
+        $turnoSiguienteId = $stNext->fetchColumn();
+    } else {
+        // ID inválido, ir al modo por defecto
+        header('Location: historial.php');
+        exit;
+    }
+} elseif ($fechaParam) {
+    $fecha = $fechaParam;
+} else {
+    $filtroTurno = true;
+    
+    // Buscar turno activo
+    $stTurno = $db->prepare("SELECT id, inicio FROM turnos WHERE restaurante_id = ? AND fin IS NULL ORDER BY inicio DESC LIMIT 1");
+    $stTurno->execute([$restauranteId]);
+    $turnoActivo = $stTurno->fetch();
+    
+    if ($turnoActivo) {
+        $turnoId = $turnoActivo['id'];
+        $inicioRango = $turnoActivo['inicio'];
+        $finRango = date('Y-m-d H:i:s');
+        $tituloTurno = "Turno actual &mdash; desde " . date('H:i', strtotime($inicioRango));
+        $fecha = date('Y-m-d', strtotime($inicioRango));
+
+        // Botón "Ver turno anterior" -> el último turno cerrado
+        $stPrev2 = $db->prepare("SELECT id FROM turnos WHERE restaurante_id = ? AND fin IS NOT NULL ORDER BY fin DESC LIMIT 1");
+        $stPrev2->execute([$restauranteId]);
+        $turnoAnteriorId = $stPrev2->fetchColumn();
+    } else {
+        // Buscar último turno cerrado
+        $stUltimo = $db->prepare("SELECT id, inicio, fin FROM turnos WHERE restaurante_id = ? AND fin IS NOT NULL ORDER BY fin DESC LIMIT 1");
+        $stUltimo->execute([$restauranteId]);
+        $ultimoTurno = $stUltimo->fetch();
+        
+        if ($ultimoTurno) {
+            $filtroTurno = true;
+            $esHistorico = true;
+            $turnoId = $ultimoTurno['id'];
+            $inicioRango = $ultimoTurno['inicio'];
+            $finRango = $ultimoTurno['fin'];
+            $tituloTurno = "Último turno cerrado &mdash; " . date('d/m H:i', strtotime($inicioRango)) . " &rarr; " . date('H:i', strtotime($finRango));
+            $fecha = date('Y-m-d', strtotime($finRango));
+
+            // Turno anterior al último
+            $stPrev3 = $db->prepare("SELECT id FROM turnos WHERE restaurante_id = ? AND fin IS NOT NULL AND id < ? ORDER BY id DESC LIMIT 1");
+            $stPrev3->execute([$restauranteId, $turnoId]);
+            $turnoAnteriorId = $stPrev3->fetchColumn();
+        } else {
+            $fecha = date('Y-m-d');
+            $filtroTurno = false;
+        }
+    }
+}
 
 $sql = "
     SELECT pe.id, pe.tipo, pe.total, pe.created_at, pe.updated_at,
@@ -26,9 +117,18 @@ $sql = "
     JOIN usuarios u ON u.id = pe.usuario_id
     LEFT JOIN comprobantes c ON c.pedido_id = pe.id
     WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado'
-      AND DATE(pe.created_at) = ?
 ";
-$params = [$restauranteId, $fecha];
+$params = [$restauranteId];
+
+if ($filtroTurno) {
+    $sql .= " AND pe.updated_at BETWEEN ? AND ?";
+    $params[] = $inicioRango;
+    $params[] = $finRango;
+} else {
+    $sql .= " AND DATE(pe.created_at) = ?";
+    $params[] = $fecha;
+}
+
 if ($tipo) { $sql .= " AND pe.tipo = ?"; $params[] = $tipo; }
 if ($buscar && is_numeric($buscar)) { $sql .= " AND pe.id = ?"; $params[] = (int)$buscar; }
 $sql .= " ORDER BY pe.updated_at DESC LIMIT 100";
@@ -37,26 +137,47 @@ $st = $db->prepare($sql);
 $st->execute($params);
 $pedidos = $st->fetchAll();
 
-// Métricas del día consultado
-$stVentas = $db->prepare("SELECT COALESCE(SUM(total),0) AS total_dia FROM pedidos WHERE restaurante_id = ? AND estado = 'cobrado' AND DATE(created_at) = ?");
-$stVentas->execute([$restauranteId, $fecha]);
+// Métricas
+if ($filtroTurno) {
+    $stVentas = $db->prepare("SELECT COALESCE(SUM(total),0) AS total_dia FROM pedidos WHERE restaurante_id = ? AND estado = 'cobrado' AND updated_at BETWEEN ? AND ?");
+    $stVentas->execute([$restauranteId, $inicioRango, $finRango]);
+} else {
+    $stVentas = $db->prepare("SELECT COALESCE(SUM(total),0) AS total_dia FROM pedidos WHERE restaurante_id = ? AND estado = 'cobrado' AND DATE(created_at) = ?");
+    $stVentas->execute([$restauranteId, $fecha]);
+}
 $ventas = $stVentas->fetch();
 $ingresosHoy = $ventas['total_dia'];
 
-$stGastos = $db->prepare("SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE restaurante_id = ? AND fecha = ? AND activo = 1");
-$stGastos->execute([$restauranteId, $fecha]);
+if ($filtroTurno) {
+    $stGastos = $db->prepare("SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE restaurante_id = ? AND created_at BETWEEN ? AND ? AND activo = 1");
+    $stGastos->execute([$restauranteId, $inicioRango, $finRango]);
+} else {
+    $stGastos = $db->prepare("SELECT COALESCE(SUM(monto), 0) FROM gastos WHERE restaurante_id = ? AND fecha = ? AND activo = 1");
+    $stGastos->execute([$restauranteId, $fecha]);
+}
 $gastosHoy = $stGastos->fetchColumn();
 
 $utilidadHoy = $ingresosHoy - $gastosHoy;
 
-$stMetodos = $db->prepare("
-    SELECT pa.metodo, COALESCE(SUM(pa.monto),0) AS total
-    FROM pagos pa
-    JOIN pedidos pe ON pe.id = pa.pedido_id
-    WHERE pe.restaurante_id = ? AND DATE(pa.created_at) = ?
-    GROUP BY pa.metodo
-");
-$stMetodos->execute([$restauranteId, $fecha]);
+if ($filtroTurno) {
+    $stMetodos = $db->prepare("
+        SELECT pa.metodo, COALESCE(SUM(pa.monto),0) AS total
+        FROM pagos pa
+        JOIN pedidos pe ON pe.id = pa.pedido_id
+        WHERE pe.restaurante_id = ? AND pa.created_at BETWEEN ? AND ?
+        GROUP BY pa.metodo
+    ");
+    $stMetodos->execute([$restauranteId, $inicioRango, $finRango]);
+} else {
+    $stMetodos = $db->prepare("
+        SELECT pa.metodo, COALESCE(SUM(pa.monto),0) AS total
+        FROM pagos pa
+        JOIN pedidos pe ON pe.id = pa.pedido_id
+        WHERE pe.restaurante_id = ? AND DATE(pa.created_at) = ?
+        GROUP BY pa.metodo
+    ");
+    $stMetodos->execute([$restauranteId, $fecha]);
+}
 $metodos = $stMetodos->fetchAll();
 $metodoMap = array_column($metodos, 'total', 'metodo');
 
@@ -68,11 +189,57 @@ require_once '../../includes/header.php';
 
         <div class="page-content">
 
+            <?php if ($esHistorico): ?>
+            <!-- Banner modo histórico -->
+            <div style="background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(251,191,36,.05));border:1.5px solid rgba(245,158,11,.35);border-radius:var(--radius-md);padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
+                <i class="fa-solid fa-eye" style="color:#f59e0b;font-size:1.1rem;flex-shrink:0;"></i>
+                <div style="flex:1;">
+                    <div style="font-size:.85rem;font-weight:700;color:#92400e;">Vista de turno histórico</div>
+                    <div style="font-size:.78rem;color:#b45309;">Solo lectura &mdash; <?= htmlspecialchars(strip_tags($tituloTurno)) ?></div>
+                </div>
+                <a href="historial.php" class="btn btn-ghost btn-sm" style="white-space:nowrap;">
+                    <i class="fa-solid fa-arrow-left"></i> Turno actual
+                </a>
+            </div>
+            <?php endif; ?>
+
             <div class="d-flex align-center justify-between mb-16">
                 <div>
                     <h1><i class="fa-solid fa-clock-rotate-left" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Registro de Ventas</h1>
-                    <p><?= count($pedidos) ?> pedido(s) encontrados</p>
+                    <p><?= $filtroTurno ? '<strong>' . $tituloTurno . '</strong><br>' : '' ?><?= count($pedidos) ?> pedido(s) encontrados</p>
                 </div>
+                <?php if ($filtroTurno && !$fechaParam): ?>
+                <!-- Navegación de turnos -->
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <?php if ($turnoAnteriorId): ?>
+                    <a href="historial.php?turno_id=<?= $turnoAnteriorId ?>" class="btn btn-ghost btn-sm" title="Turno anterior" style="display:flex;align-items:center;gap:5px;">
+                        <i class="fa-solid fa-chevron-left"></i> Anterior
+                    </a>
+                    <?php else: ?>
+                    <button class="btn btn-ghost btn-sm" disabled style="opacity:.35;cursor:not-allowed;">
+                        <i class="fa-solid fa-chevron-left"></i> Anterior
+                    </button>
+                    <?php endif; ?>
+
+                    <span style="font-size:.75rem;color:var(--text-muted);padding:0 4px;white-space:nowrap;">
+                        <?= $esHistorico ? 'Turno #' . $turnoId : 'Turno actual' ?>
+                    </span>
+
+                    <?php if ($turnoSiguienteId): ?>
+                    <a href="historial.php?turno_id=<?= $turnoSiguienteId ?>" class="btn btn-ghost btn-sm" title="Turno siguiente" style="display:flex;align-items:center;gap:5px;">
+                        Siguiente <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    <?php elseif ($esHistorico): ?>
+                    <a href="historial.php" class="btn btn-ghost btn-sm" style="display:flex;align-items:center;gap:5px;">
+                        Actual <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    <?php else: ?>
+                    <button class="btn btn-ghost btn-sm" disabled style="opacity:.35;cursor:not-allowed;">
+                        Siguiente <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Panel de Resumen -->
@@ -81,25 +248,25 @@ require_once '../../includes/header.php';
                 <div class="card" style="border-left:4px solid var(--success);padding:16px;">
                     <div style="color:var(--success);margin-bottom:8px;"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div style="font-size:1.5rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;">S/ <?= number_format($ingresosHoy, 2) ?></div>
-                    <div style="font-size:.85rem;color:var(--text-secondary);">Ingresos <?= $fecha === date('Y-m-d') ? 'hoy' : 'del día' ?></div>
+                    <div style="font-size:.85rem;color:var(--text-secondary);">Ingresos <?= $filtroTurno ? $tituloTurno : ($fecha === date('Y-m-d') ? 'hoy' : 'del día') ?></div>
                 </div>
                 <!-- Gastos -->
                 <div class="card" style="border-left:4px solid var(--danger);padding:16px;">
                     <div style="color:var(--danger);margin-bottom:8px;"><i class="fa-solid fa-money-bill-transfer"></i></div>
                     <div style="font-size:1.5rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;">S/ <?= number_format($gastosHoy, 2) ?></div>
-                    <div style="font-size:.85rem;color:var(--text-secondary);">Gastos <?= $fecha === date('Y-m-d') ? 'hoy' : 'del día' ?></div>
+                    <div style="font-size:.85rem;color:var(--text-secondary);">Gastos <?= $filtroTurno ? $tituloTurno : ($fecha === date('Y-m-d') ? 'hoy' : 'del día') ?></div>
                 </div>
                 <!-- Utilidad -->
                 <div class="card" style="border-left:4px solid var(--primary);padding:16px;background:var(--bg-secondary);">
                     <div style="color:var(--primary);margin-bottom:8px;"><i class="fa-solid fa-piggy-bank"></i></div>
                     <div style="font-size:1.5rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;">S/ <?= number_format($utilidadHoy, 2) ?></div>
-                    <div style="font-size:.85rem;color:var(--text-secondary);">Utilidad <?= $fecha === date('Y-m-d') ? 'hoy' : 'del día' ?></div>
+                    <div style="font-size:.85rem;color:var(--text-secondary);">Utilidad <?= $filtroTurno ? $tituloTurno : ($fecha === date('Y-m-d') ? 'hoy' : 'del día') ?></div>
                 </div>
             </div>
 
             <div class="card mb-20" style="padding:16px;">
                 <div style="font-size:.85rem;font-weight:700;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                    <i class="fa-solid fa-credit-card"></i> Ingresos por método de pago — <?= $fecha === date('Y-m-d') ? 'hoy' : $fecha ?>
+                    <i class="fa-solid fa-credit-card"></i> Ingresos por método de pago — <?= $filtroTurno ? $tituloTurno : ($fecha === date('Y-m-d') ? 'hoy' : $fecha) ?>
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:12px;">
                     <?php

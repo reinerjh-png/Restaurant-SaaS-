@@ -171,13 +171,13 @@ try {
         $db->prepare("UPDATE mesas SET estado = 'libre' WHERE id = ?")->execute([$pedido['mesa_id']]);
     }
 
-    // 9. Actualizar turno activo
+    // 9. Actualizar turno activo global del restaurante
     $stTurno = $db->prepare("
         SELECT id FROM turnos
-        WHERE restaurante_id = ? AND usuario_id = ? AND fin IS NULL
+        WHERE restaurante_id = ? AND fin IS NULL
         ORDER BY inicio DESC LIMIT 1
     ");
-    $stTurno->execute([$restauranteId, $usuarioId]);
+    $stTurno->execute([$restauranteId]);
     $turno = $stTurno->fetch();
     if ($turno) {
         $totalesMetodo = ['efectivo'=>0,'yape'=>0,'transferencia'=>0,'tarjeta'=>0,'otro'=>0];

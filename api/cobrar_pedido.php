@@ -77,13 +77,13 @@ try {
         $stMesa->execute([$pedido['mesa_id']]);
     }
 
-    // Actualizar turno activo del usuario
+    // Actualizar turno activo global del restaurante
     $stTurno = $db->prepare("
         SELECT id FROM turnos
-        WHERE restaurante_id = ? AND usuario_id = ? AND fin IS NULL
+        WHERE restaurante_id = ? AND fin IS NULL
         ORDER BY inicio DESC LIMIT 1
     ");
-    $stTurno->execute([$restauranteId, $usuarioId]);
+    $stTurno->execute([$restauranteId]);
     $turno = $stTurno->fetch();
 
     if ($turno) {
