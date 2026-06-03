@@ -12,6 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(false, null, 'Método no permitido.');
 }
 
+$data = json_decode(file_get_contents('php://input'), true);
+$reabrir = isset($data['reabrir']) ? filter_var($data['reabrir'], FILTER_VALIDATE_BOOLEAN) : false;
+
 $restauranteId = $_SESSION['restaurante_id'];
 $usuarioId     = $_SESSION['usuario_id'];
 $db = getDB();
@@ -90,15 +93,19 @@ try {
         $turno['id']
     ]);
 
-    // Auto-abrir siguiente turno inmediatamente
-    $stNuevoTurno = $db->prepare("
-        INSERT INTO turnos (restaurante_id, usuario_id, inicio)
-        VALUES (?, ?, NOW())
-    ");
-    $stNuevoTurno->execute([$restauranteId, $usuarioId]);
+    $mensaje = 'Turno cerrado correctamente.';
+    if ($reabrir) {
+        // Auto-abrir siguiente turno inmediatamente
+        $stNuevoTurno = $db->prepare("
+            INSERT INTO turnos (restaurante_id, usuario_id, inicio)
+            VALUES (?, ?, NOW())
+        ");
+        $stNuevoTurno->execute([$restauranteId, $usuarioId]);
+        $mensaje = 'Turno cerrado y nueva caja abierta inmediatamente.';
+    }
 
     $db->commit();
-    jsonResponse(true, $totales, 'Turno cerrado. Nuevo turno iniciado automáticamente.');
+    jsonResponse(true, $totales, $mensaje);
 
 } catch (PDOException $e) {
     $db->rollBack();

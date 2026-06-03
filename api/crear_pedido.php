@@ -22,6 +22,14 @@ $db = getDB();
 try {
     $db->beginTransaction();
 
+    // Verificar que haya un turno de caja activo
+    $stTurno = $db->prepare("SELECT id FROM turnos WHERE restaurante_id = ? AND fin IS NULL LIMIT 1");
+    $stTurno->execute([$restauranteId]);
+    if (!$stTurno->fetch()) {
+        $db->rollBack();
+        jsonResponse(false, null, 'No se puede crear un pedido porque la caja está cerrada.');
+    }
+
     // Verificar que la mesa esté libre
     if ($mesaId) {
         $stMesa = $db->prepare("SELECT estado FROM mesas WHERE id = ? AND restaurante_id = ? FOR UPDATE");

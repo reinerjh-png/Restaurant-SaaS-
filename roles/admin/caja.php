@@ -288,20 +288,22 @@ require_once '../../includes/header.php';
             <h1 style="font-size:1.55rem;font-weight:800;margin-bottom:4px;">
                 <i class="fa-solid fa-cash-register" style="color:var(--primary);margin-right:8px;"></i>Caja
             </h1>
-            <p style="color:var(--text-secondary);font-size:.88rem;">Gestión de turnos de caja &mdash; La caja siempre permanece activa.</p>
+            <p style="color:var(--text-secondary);font-size:.88rem;">Gestión de turnos de caja.</p>
         </div>
     </div>
 
     <!-- Estado de la Caja -->
-    <div class="caja-hero abierta">
-        <div class="caja-status-badge abierta">
-            <span class="pulse-dot"></span>
-            Caja Abierta
+    <div class="caja-hero <?= $turnoActivo ? 'abierta' : 'cerrada' ?>">
+        <div class="caja-status-badge <?= $turnoActivo ? 'abierta' : 'cerrada' ?>">
+            <?php if ($turnoActivo): ?><span class="pulse-dot"></span><?php endif; ?>
+            Caja <?= $turnoActivo ? 'Abierta' : 'Cerrada' ?>
         </div>
 
-        <div class="caja-hero-icon">🟢</div>
+        <div class="caja-hero-icon"><?= $turnoActivo ? '🟢' : '🔴' ?></div>
 
-        <div class="caja-hero-title">Turno en Curso</div>
+        <div class="caja-hero-title">
+            <?= $turnoActivo ? 'Turno en Curso' : 'Caja Cerrada' ?>
+        </div>
 
         <div class="caja-hero-meta">
             <?php if ($turnoActivo): ?>
@@ -310,13 +312,19 @@ require_once '../../includes/header.php';
                 &nbsp;·&nbsp;
                 Abierta por <strong><?= htmlspecialchars($turnoActivo['abierto_por']) ?></strong>
             <?php else: ?>
-                Inicializando primer turno del sistema...
+                No hay ningún turno abierto actualmente.
             <?php endif; ?>
         </div>
 
-        <button id="btn-cerrar" class="btn-caja btn-cerrar" onclick="confirmarCierre()" <?= !$turnoActivo ? 'disabled' : '' ?>>
-            <i class="fa-solid fa-flag-checkered"></i> Cerrar Turno
-        </button>
+        <?php if ($turnoActivo): ?>
+            <button id="btn-cerrar" class="btn-caja btn-cerrar" onclick="confirmarCierre()">
+                <i class="fa-solid fa-flag-checkered"></i> Cerrar Turno
+            </button>
+        <?php else: ?>
+            <button id="btn-abrir" class="btn-caja btn-abrir" onclick="abrirCaja()">
+                <i class="fa-solid fa-lock-open"></i> Abrir Caja
+            </button>
+        <?php endif; ?>
     </div>
 
     <?php if ($turnoActivo): ?>
@@ -445,7 +453,7 @@ require_once '../../includes/header.php';
         <div style="font-size:3rem;margin-bottom:16px;color:var(--danger);">🏁</div>
         <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:10px;">Cerrar el Turno Actual</h2>
         <p style="color:var(--text-secondary);font-size:.95rem;margin-bottom:20px;line-height:1.5;">
-            El turno actual se cerrará y <strong>se abrirá automáticamente el siguiente turno</strong>.
+            Selecciona si deseas solo cerrar el turno o cerrarlo y reabrir uno nuevo inmediatamente.
         </p>
 
         <?php if ($turnoActivo): ?>
@@ -470,29 +478,17 @@ require_once '../../includes/header.php';
         </div>
         <?php endif; ?>
 
-        <div style="display:flex;gap:12px;justify-content:center;">
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
             <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
-            <button id="btn-confirmar-cierre" class="btn btn-danger" onclick="cerrarCaja()">
+            <button id="btn-confirmar-cierre" class="btn btn-danger" onclick="cerrarCaja(false)">
                 <i class="fa-solid fa-flag-checkered"></i> Confirmar Cierre
+            </button>
+            <button id="btn-confirmar-reabrir" class="btn" style="background:var(--success);color:#fff;border-color:var(--success);" onclick="cerrarCaja(true)">
+                <i class="fa-solid fa-rotate"></i> Confirmar y Reabrir Caja
             </button>
         </div>
     </div>
 </div>
-
-<?php if (!$turnoActivo): ?>
-<script>
-// Si no hay turno activo (primer inicio), abrir automáticamente
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('<?= BASE_URL ?>/api/abrir_turno.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-    }).then(r => r.json()).then(data => {
-        if (data.success) setTimeout(() => location.reload(), 500);
-    });
-});
-</script>
-<?php endif; ?>
 
 <script>
 function confirmarCierre() {
@@ -504,15 +500,20 @@ function cerrarModal() {
     document.getElementById('modal-cierre').style.display = 'none';
 }
 
-function cerrarCaja() {
-    const btn = document.getElementById('btn-confirmar-cierre');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cerrando turno...';
+function cerrarCaja(reabrir) {
+    const btnId = reabrir ? 'btn-confirmar-reabrir' : 'btn-confirmar-cierre';
+    const btn = document.getElementById(btnId);
+    
+    document.getElementById('btn-confirmar-cierre').disabled = true;
+    document.getElementById('btn-confirmar-reabrir').disabled = true;
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
 
     fetch('<?= BASE_URL ?>/api/cerrar_turno.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({ reabrir: reabrir })
     })
     .then(r => r.json())
     .then(data => {
@@ -522,14 +523,44 @@ function cerrarCaja() {
             setTimeout(() => location.reload(), 900);
         } else {
             showToast('❌ ' + data.message, 'error');
+            document.getElementById('btn-confirmar-cierre').disabled = false;
+            document.getElementById('btn-confirmar-reabrir').disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(() => {
+        showToast('❌ Error de conexión', 'error');
+        document.getElementById('btn-confirmar-cierre').disabled = false;
+        document.getElementById('btn-confirmar-reabrir').disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+function abrirCaja() {
+    const btn = document.getElementById('btn-abrir');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abriendo...';
+
+    fetch('<?= BASE_URL ?>/api/abrir_turno.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✅ ' + data.message, 'success');
+            setTimeout(() => location.reload(), 900);
+        } else {
+            showToast('❌ ' + data.message, 'error');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Confirmar Cierre';
+            btn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Abrir Caja';
         }
     })
     .catch(() => {
         showToast('❌ Error de conexión', 'error');
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Confirmar Cierre';
+        btn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Abrir Caja';
     });
 }
 

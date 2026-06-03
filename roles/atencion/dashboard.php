@@ -10,6 +10,10 @@ requireRole(['atencion', 'admin', 'superadmin']);
 $restauranteId = $_SESSION['restaurante_id'];
 $db = getDB();
 
+$stTurno = $db->prepare("SELECT id FROM turnos WHERE restaurante_id = ? AND fin IS NULL LIMIT 1");
+$stTurno->execute([$restauranteId]);
+$cajaAbierta = (bool)$stTurno->fetch();
+
 $stMesas = $db->prepare("
     SELECT m.*,
            p.id AS pedido_id,
@@ -157,6 +161,7 @@ require_once '../../includes/header.php';
 
 <script>
 const ROL_ACTUAL = '<?= $_SESSION['rol'] ?>';
+const CAJA_ABIERTA = <?= json_encode($cajaAbierta) ?>;
 let mesaActual = null;
 
 // Reloj
@@ -179,16 +184,27 @@ function clickMesa(mesa) {
 
     if (mesa.estado === 'libre') {
         sub.innerHTML = `<i class="fa-solid fa-users"></i> ${mesa.capacidad} personas &middot; Libre`;
-        body.innerHTML = `
-            <div style="text-align:center;padding:10px 0;">
-                <div class="empty-state" style="padding:16px 0;">
-                    <div class="icon"><i class="fa-solid fa-utensils"></i></div>
-                    <p>Esta mesa está libre.</p>
-                </div>
-                <button class="btn btn-primario btn-full btn-lg" onclick="iniciarPedido()">
-                    <i class="fa-solid fa-plus"></i> Iniciar nueva comanda
-                </button>
-            </div>`;
+        if (!CAJA_ABIERTA) {
+            body.innerHTML = `
+                <div style="text-align:center;padding:10px 0;">
+                    <div class="empty-state" style="padding:16px 0;">
+                        <div class="icon" style="color:var(--danger);"><i class="fa-solid fa-lock"></i></div>
+                        <p style="color:var(--danger);font-weight:600;">La caja está cerrada</p>
+                        <p style="font-size:0.85rem;color:var(--text-secondary);">No se pueden iniciar nuevas comandas.</p>
+                    </div>
+                </div>`;
+        } else {
+            body.innerHTML = `
+                <div style="text-align:center;padding:10px 0;">
+                    <div class="empty-state" style="padding:16px 0;">
+                        <div class="icon"><i class="fa-solid fa-utensils"></i></div>
+                        <p>Esta mesa está libre.</p>
+                    </div>
+                    <button class="btn btn-primario btn-full btn-lg" onclick="iniciarPedido()">
+                        <i class="fa-solid fa-plus"></i> Iniciar nueva comanda
+                    </button>
+                </div>`;
+        }
     } else if (mesa.pedido_id) {
         const minutos = mesa.pedido_inicio
             ? Math.round((Date.now() - new Date(mesa.pedido_inicio).getTime()) / 60000) : 0;
