@@ -87,6 +87,7 @@ require_once '../../includes/header.php';
 
             <div class="card">
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                     <div class="form-group mb-16">
                         <label class="form-label">Nombre completo <span style="color:var(--danger);">*</span></label>
                         <input type="text" name="nombre" class="form-control" value="<?= htmlspecialchars($usuario['nombre'] ?? '') ?>" required>

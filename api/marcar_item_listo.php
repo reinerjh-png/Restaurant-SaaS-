@@ -56,5 +56,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al actualizar: ' . $e->getMessage());
+    error_log('Error al actualizar: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

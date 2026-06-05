@@ -121,8 +121,10 @@ CREATE TABLE `facturacion_config` (
   `telefono` varchar(20) DEFAULT NULL,
   `serie_boleta` varchar(4) DEFAULT 'B001',
   `serie_factura` varchar(4) DEFAULT 'F001',
+  `serie_simple` varchar(4) DEFAULT 'T001',
   `correlativo_boleta` int(11) DEFAULT 0,
   `correlativo_factura` int(11) DEFAULT 0,
+  `correlativo_simple` int(11) DEFAULT 0,
   `pie_mensaje` varchar(300) DEFAULT '¡Gracias por su visita!',
   `logo` varchar(255) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -132,8 +134,8 @@ CREATE TABLE `facturacion_config` (
 -- Volcado de datos para la tabla `facturacion_config`
 --
 
-INSERT INTO `facturacion_config` (`id`, `restaurante_id`, `ruc`, `razon_social`, `nombre_comercial`, `direccion_fiscal`, `telefono`, `serie_boleta`, `serie_factura`, `correlativo_boleta`, `correlativo_factura`, `pie_mensaje`, `logo`, `updated_at`) VALUES
-(1, 1, '10042128797', 'Sabor Perú', 'Sabor Perú', 'Av. Tito Jaime 514, Tingo María 10131', '+51 999 247 162', 'B001', 'F001', 0, 0, '¡Gracias por su visita! Vuelva pronto 😊', '/system-restaurant/assets/logos/logo_rest_1.png', '2026-06-01 21:56:02');
+INSERT INTO `facturacion_config` (`id`, `restaurante_id`, `ruc`, `razon_social`, `nombre_comercial`, `direccion_fiscal`, `telefono`, `serie_boleta`, `serie_factura`, `serie_simple`, `correlativo_boleta`, `correlativo_factura`, `correlativo_simple`, `pie_mensaje`, `logo`, `updated_at`) VALUES
+(1, 1, '10042128797', 'Sabor Perú', 'Sabor Perú', 'Av. Tito Jaime 514, Tingo María 10131', '+51 999 247 162', 'B001', 'F001', 'T001', 0, 0, 0, '¡Gracias por su visita! Vuelva pronto 😊', '/system-restaurant/assets/logos/logo_rest_1.png', '2026-06-01 21:56:02');
 
 -- --------------------------------------------------------
 
@@ -263,7 +265,10 @@ CREATE TABLE `pagos` (
   `monto` decimal(10,2) NOT NULL,
   `referencia` varchar(100) DEFAULT NULL,
   `usuario_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `anulado` tinyint(1) DEFAULT 0,
+  `anulado_por` int(11) DEFAULT NULL,
+  `anulado_en` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -567,7 +572,8 @@ CREATE TABLE `turnos` (
   `total_transferencia` decimal(10,2) DEFAULT 0.00,
   `total_tarjeta` decimal(10,2) DEFAULT 0.00,
   `total_otros` decimal(10,2) DEFAULT 0.00,
-  `total_general` decimal(10,2) DEFAULT 0.00
+  `total_general` decimal(10,2) DEFAULT 0.00,
+  `_turno_abierto_key` int(11) GENERATED ALWAYS AS (case when `fin` is null then `restaurante_id` else NULL end) VIRTUAL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -717,7 +723,8 @@ ALTER TABLE `restaurantes`
 ALTER TABLE `turnos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `restaurante_id` (`restaurante_id`),
-  ADD KEY `usuario_id` (`usuario_id`);
+  ADD KEY `usuario_id` (`usuario_id`),
+  ADD UNIQUE KEY `uq_turno_abierto_por_restaurante` (`_turno_abierto_key`);
 
 --
 -- Indices de la tabla `usuarios`

@@ -19,13 +19,16 @@ $db = getDB();
 try {
     $db->beginTransaction();
 
-    // Verificar si ya hay un turno abierto
+    // Verificar si ya hay un turno abierto — FOR UPDATE garantiza atomicidad
+    // ante dos peticiones simultáneas (la segunda bloqueará hasta que la primera
+    // haga commit, y entonces verá el turno ya existente y abortará).
     $stVerificar = $db->prepare("
-        SELECT id FROM turnos 
+        SELECT id FROM turnos
         WHERE restaurante_id = ? AND fin IS NULL
+        FOR UPDATE
     ");
     $stVerificar->execute([$restauranteId]);
-    
+
     if ($stVerificar->fetch()) {
         $db->rollBack();
         jsonResponse(false, null, 'Ya existe una caja abierta en este momento.');
@@ -43,5 +46,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al abrir la caja: ' . $e->getMessage());
+    error_log('Error al abrir la caja: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

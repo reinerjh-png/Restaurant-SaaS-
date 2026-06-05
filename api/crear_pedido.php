@@ -64,5 +64,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al crear el pedido: ' . $e->getMessage());
+    error_log('Error al crear el pedido: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

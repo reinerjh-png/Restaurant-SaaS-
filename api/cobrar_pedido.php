@@ -67,6 +67,15 @@ try {
         jsonResponse(false, null, 'No se registraron pagos válidos');
     }
 
+    // Validar que el total pagado coincide con el total final (tolerancia de ±0.01 por redondeo)
+    if (abs($totalPagado - $totalFinal) > 0.01) {
+        $db->rollBack();
+        jsonResponse(false, null, sprintf(
+            'El total pagado (S/ %.2f) no coincide con el total del pedido (S/ %.2f). Ajusta los montos antes de cobrar.',
+            $totalPagado, $totalFinal
+        ));
+    }
+
     // Marcar pedido como cobrado y actualizar con el nuevo total, descuento y cargo
     $stCobrar = $db->prepare("UPDATE pedidos SET estado = 'cobrado', notas = ?, descuento = ?, cargo_extra = ?, total = ? WHERE id = ?");
     $stCobrar->execute([$notas ?: null, $descuento, $cargo_extra, $totalFinal, $pedidoId]);
@@ -120,5 +129,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al registrar el cobro: ' . $e->getMessage());
+    error_log('Error al registrar el cobro: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

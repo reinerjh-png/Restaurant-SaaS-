@@ -77,11 +77,23 @@ try {
     }
 
     // 3. Incrementar correlativo y obtener número de comprobante
-    // El comprobante simple comparte la serie/correlativo de boleta
-    $campoCorrel  = $tipo === 'factura' ? 'correlativo_factura' : 'correlativo_boleta';
-    $campoSerie   = $tipo === 'factura' ? 'serie_factura'       : 'serie_boleta';
-    $nuevoCorrel  = intval($cfg[$campoCorrel]) + 1;
-    $serie        = $cfg[$campoSerie] ?: ($tipo === 'factura' ? 'F001' : 'B001');
+    // El comprobante simple tiene su propia serie y correlativo
+    if ($tipo === 'factura') {
+        $campoCorrel = 'correlativo_factura';
+        $campoSerie  = 'serie_factura';
+        $defSerie    = 'F001';
+    } elseif ($tipo === 'boleta') {
+        $campoCorrel = 'correlativo_boleta';
+        $campoSerie  = 'serie_boleta';
+        $defSerie    = 'B001';
+    } else {
+        $campoCorrel = 'correlativo_simple';
+        $campoSerie  = 'serie_simple';
+        $defSerie    = 'T001';
+    }
+
+    $nuevoCorrel  = intval($cfg[$campoCorrel] ?? 0) + 1;
+    $serie        = (!empty($cfg[$campoSerie]) ? $cfg[$campoSerie] : null) ?: $defSerie;
     $numComp      = $serie . '-' . str_pad($nuevoCorrel, 5, '0', STR_PAD_LEFT);
 
     $stActCfg = $db->prepare("UPDATE facturacion_config SET $campoCorrel = ? WHERE restaurante_id = ?");
@@ -163,6 +175,15 @@ try {
         jsonResponse(false, null, 'No se registraron pagos válidos.');
     }
 
+    // Validar que el total pagado coincide con el total final (tolerancia de ±0.01 por redondeo)
+    if (abs($totalPagado - $totalFinal) > 0.01) {
+        $db->rollBack();
+        jsonResponse(false, null, sprintf(
+            'El total pagado (S/ %.2f) no coincide con el total del pedido (S/ %.2f). Ajusta los montos antes de emitir el comprobante.',
+            $totalPagado, $totalFinal
+        ));
+    }
+
     // 8. Marcar pedido como cobrado, guardando descuento y total final
     $stCobrar = $db->prepare("UPDATE pedidos SET estado = 'cobrado', notas = ?, descuento = ?, cargo_extra = ?, total = ? WHERE id = ?");
     $stCobrar->execute([$notas ?: null, $descuento, $cargo_extra, $totalFinal, $pedidoId]);
@@ -217,5 +238,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al guardar el comprobante: ' . $e->getMessage());
+    error_log('Error al guardar el comprobante: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

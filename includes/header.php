@@ -61,7 +61,28 @@ if (!empty($_SESSION['restaurante_id']) && $_SESSION['rol'] !== 'superadmin') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <script>window.BASE_URL = "<?= BASE_URL ?>";</script>
+    <script>
+        window.BASE_URL = "<?= BASE_URL ?>";
+        window.CSRF_TOKEN = "<?= $_SESSION['csrf_token'] ?? '' ?>";
+
+        // Intercept fetch to add CSRF token automatically
+        const originalFetch = window.fetch;
+        window.fetch = function() {
+            let args = Array.prototype.slice.call(arguments);
+            let config = args[1] || {};
+            
+            if (config.method && config.method.toUpperCase() === 'POST') {
+                config.headers = config.headers || {};
+                if (config.headers instanceof Headers) {
+                    config.headers.append('X-CSRF-Token', window.CSRF_TOKEN);
+                } else {
+                    config.headers['X-CSRF-Token'] = window.CSRF_TOKEN;
+                }
+                args[1] = config;
+            }
+            return originalFetch.apply(this, args);
+        };
+    </script>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css?v=<?= filemtime(__DIR__ . '/../assets/css/main.css') ?>">
 </head>
 <body>

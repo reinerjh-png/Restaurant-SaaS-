@@ -19,9 +19,10 @@ switch ($accion) {
     case 'crear':
         $numero    = (int)($input['numero']    ?? 0);
         $capacidad = (int)($input['capacidad'] ?? 4);
-        $activo    = (int)($input['activo']    ?? 1);
+        $activo    = !empty($input['activo']) ? 1 : 0;
 
-        if ($numero < 1) jsonResponse(false, null, 'Número de mesa inválido');
+        if ($numero < 1 || $numero > 9999) jsonResponse(false, null, 'Número de mesa inválido');
+        if ($capacidad < 1 || $capacidad > 200) jsonResponse(false, null, 'Capacidad inválida');
 
         // Verificar duplicado
         $stDup = $db->prepare("SELECT id FROM mesas WHERE restaurante_id = ? AND numero = ?");
@@ -36,9 +37,10 @@ switch ($accion) {
         $id        = (int)($input['id']        ?? 0);
         $numero    = (int)($input['numero']    ?? 0);
         $capacidad = (int)($input['capacidad'] ?? 4);
-        $activo    = (int)($input['activo']    ?? 1);
+        $activo    = !empty($input['activo']) ? 1 : 0;
 
-        if (!$id || $numero < 1) jsonResponse(false, null, 'Datos inválidos');
+        if (!$id || $numero < 1 || $numero > 9999) jsonResponse(false, null, 'Datos inválidos');
+        if ($capacidad < 1 || $capacidad > 200) jsonResponse(false, null, 'Capacidad inválida');
 
         // Verificar duplicado excluyendo la propia mesa
         $stDup = $db->prepare("SELECT id FROM mesas WHERE restaurante_id = ? AND numero = ? AND id != ?");
@@ -54,8 +56,8 @@ switch ($accion) {
         if (!$id) jsonResponse(false, null, 'ID requerido');
 
         // Verificar que no tenga pedidos activos
-        $stPed = $db->prepare("SELECT COUNT(*) FROM pedidos WHERE mesa_id = ? AND estado = 'activo'");
-        $stPed->execute([$id]);
+        $stPed = $db->prepare("SELECT COUNT(*) FROM pedidos WHERE mesa_id = ? AND restaurante_id = ? AND estado = 'activo'");
+        $stPed->execute([$id, $restauranteId]);
         if ($stPed->fetchColumn() > 0) jsonResponse(false, null, 'No se puede eliminar: la mesa tiene un pedido activo');
 
         $st = $db->prepare("DELETE FROM mesas WHERE id=? AND restaurante_id=?");

@@ -23,25 +23,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $telefono        = trim($_POST['telefono']         ?? '');
     $serieBoleta     = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_boleta']  ?? 'B001')));
     $serieFactura    = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_factura'] ?? 'F001')));
+    $serieSimple     = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($_POST['serie_simple']  ?? 'T001')));
     $pieMensaje      = trim($_POST['pie_mensaje'] ?? '');
 
     if ($ruc && strlen($ruc) !== 11) {
         $error = 'El RUC del restaurante debe tener exactamente 11 dígitos.';
-    } elseif (strlen($serieBoleta) < 2 || strlen($serieFactura) < 2) {
+    } elseif (strlen($serieBoleta) < 2 || strlen($serieFactura) < 2 || strlen($serieSimple) < 2) {
         $error = 'Las series deben tener al menos 2 caracteres.';
     } else {
         // Manejar logo upload
         $logoPath = null;
         if (!empty($_FILES['logo']['tmp_name']) && is_uploaded_file($_FILES['logo']['tmp_name'])) {
-            $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg','jpeg','png','webp','gif','svg'])) {
-                $error = 'Formato de logo no válido. Usa JPG, PNG, WebP o SVG.';
+            $tmpFile = $_FILES['logo']['tmp_name'];
+            $fileSize = filesize($tmpFile);
+            
+            if ($fileSize > 2 * 1024 * 1024) {
+                $error = 'El logo no debe pesar más de 2MB.';
+            } elseif ($fileSize < 100) {
+                // Rechazar archivos sospechosamente pequeños (posibles scripts vacíos o de prueba)
+                $error = 'El archivo es demasiado pequeño para ser una imagen válida.';
             } else {
-                $uploadDir = $_SERVER['DOCUMENT_ROOT'] . BASE_URL . '/assets/logos/';
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                $filename = 'logo_rest_' . $restauranteId . '.' . $ext;
-                if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
-                    $logoPath = BASE_URL . '/assets/logos/' . $filename;
+                // ── VALIDACIÓN REAL DE TIPO MIME (Seguridad XSS) ───────────────
+                // Se usa finfo para leer los magic bytes del archivo, NO la extensión
+                // del nombre original (que puede ser manipulada por el atacante).
+                // SVG y cualquier tipo no rasterizado son rechazados explícitamente.
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $tmpFile);
+                finfo_close($finfo);
+
+                // Lista blanca estricta: solo imágenes rasterizadas seguras.
+                // La extensión de salida se genera desde este mapa, nunca del nombre original.
+                $allowedMimes = [
+                    'image/jpeg' => 'jpg',
+                    'image/png'  => 'png',
+                    'image/webp' => 'webp',
+                    'image/gif'  => 'gif'
+                    // 'image/svg+xml' PROHIBIDO: permite inyección de JS (XSS Almacenado)
+                ];
+
+                if (!array_key_exists($mime, $allowedMimes)) {
+                    $error = 'Formato de logo no válido. Usa JPG, PNG, WebP o GIF (SVG no permitido por seguridad).';
+                } else {
+                    // La extensión proviene del MIME detectado, nunca del nombre del archivo original
+                    $ext = $allowedMimes[$mime];
+                    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . BASE_URL . '/assets/logos/';
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                    // Use time() to prevent caching old logos
+                    $filename = 'logo_rest_' . $restauranteId . '_' . time() . '.' . $ext;
+                    if (move_uploaded_file($tmpFile, $uploadDir . $filename)) {
+                        $logoPath = BASE_URL . '/assets/logos/' . $filename;
+                    } else {
+                        $error = 'Error al guardar el logo en el servidor.';
+                    }
                 }
             }
         }
@@ -58,14 +91,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     UPDATE facturacion_config
                     SET ruc = ?, razon_social = ?, nombre_comercial = ?,
                         direccion_fiscal = ?, telefono = ?,
-                        serie_boleta = ?, serie_factura = ?,
+                        serie_boleta = ?, serie_factura = ?, serie_simple = ?,
                         pie_mensaje = ?, logo = ?
                     WHERE restaurante_id = ?
                 ");
                 $st->execute([
                     $ruc ?: null, $razonSocial, $nombreComercial ?: null,
                     $direccion, $telefono ?: null,
-                    $serieBoleta, $serieFactura,
+                    $serieBoleta, $serieFactura, $serieSimple,
                     $pieMensaje, $finalLogo,
                     $restauranteId
                 ]);
@@ -73,13 +106,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $st = $db->prepare("
                     INSERT INTO facturacion_config
                         (restaurante_id, ruc, razon_social, nombre_comercial,
-                         direccion_fiscal, telefono, serie_boleta, serie_factura, pie_mensaje, logo)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         direccion_fiscal, telefono, serie_boleta, serie_factura, serie_simple, pie_mensaje, logo)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $st->execute([
                     $restauranteId, $ruc ?: null, $razonSocial, $nombreComercial ?: null,
                     $direccion, $telefono ?: null,
-                    $serieBoleta, $serieFactura, $pieMensaje, $logoPath
+                    $serieBoleta, $serieFactura, $serieSimple, $pieMensaje, $logoPath
                 ]);
             }
             $saved = true;
@@ -126,6 +159,7 @@ require_once '../../includes/header.php';
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
 
                 <!-- ══ SECCIÓN 1: IDENTIDAD VISUAL ══════════════════════════ -->
                 <div class="card mb-20">
@@ -137,8 +171,8 @@ require_once '../../includes/header.php';
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="mb-16">
                         <!-- Vista previa del logo actual -->
                         <div>
-                            <label class="form-label">Logo del restaurante <span style="font-weight:400;font-size:.8rem;color:var(--text-secondary);">(JPG, PNG, WebP, SVG)</span></label>
-                            <input type="file" name="logo" id="logo-input" class="form-control" accept="image/*" onchange="previsualizarLogo(this)">
+                            <label class="form-label">Logo del restaurante <span style="font-weight:400;font-size:.8rem;color:var(--text-secondary);">(JPG, PNG, WebP, GIF)</span></label>
+                            <input type="file" name="logo" id="logo-input" class="form-control" accept="image/jpeg, image/png, image/webp, image/gif" onchange="previsualizarLogo(this)">
                             <div style="margin-top:12px;display:flex;align-items:center;gap:12px;">
                                 <?php
                                 $logoActual = $cfg['logo'] ?? null;
@@ -155,7 +189,7 @@ require_once '../../includes/header.php';
                                     <?php else: ?>
                                     <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:4px;">Usando logo del sistema</div>
                                     <?php endif; ?>
-                                    <div style="font-size:.72rem;color:var(--text-secondary);">Recomendado: fondo transparente (PNG/SVG), mín. 200×200px</div>
+                                    <div style="font-size:.72rem;color:var(--text-secondary);">Recomendado: fondo transparente (PNG/WebP), mín. 200×200px</div>
                                 </div>
                             </div>
                         </div>
@@ -230,7 +264,7 @@ require_once '../../includes/header.php';
                     <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:16px;">
                         La serie identifica el punto de emisión. No cambies la serie si ya tienes comprobantes emitidos.
                     </p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
                         <div>
                             <label class="form-label">Serie de Boleta</label>
                             <input type="text" name="serie_boleta" class="form-control"
@@ -249,6 +283,16 @@ require_once '../../includes/header.php';
                                 oninput="this.value=this.value.toUpperCase()">
                             <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">
                                 Próximo: <?= htmlspecialchars($cfg['serie_factura'] ?? 'F001') ?>-<?= str_pad(intval($cfg['correlativo_factura'] ?? 0) + 1, 5, '0', STR_PAD_LEFT) ?>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Serie de Ticket (Simple)</label>
+                            <input type="text" name="serie_simple" class="form-control"
+                                value="<?= htmlspecialchars($cfg['serie_simple'] ?? 'T001') ?>"
+                                placeholder="T001" maxlength="4"
+                                oninput="this.value=this.value.toUpperCase()">
+                            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">
+                                Próximo: <?= htmlspecialchars($cfg['serie_simple'] ?? 'T001') ?>-<?= str_pad(intval($cfg['correlativo_simple'] ?? 0) + 1, 5, '0', STR_PAD_LEFT) ?>
                             </div>
                         </div>
                     </div>

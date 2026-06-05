@@ -31,12 +31,16 @@ function loadEnv($path) {
 // Cargar variables de entorno
 loadEnv(__DIR__ . '/../.env');
 
-// Detectar automáticamente la URL base (para localhost vs InfinityFree)
-$host = $_SERVER['HTTP_HOST'] ?? '';
-if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
-    define('BASE_URL', '/system-restaurant');
+// Detectar automáticamente la URL base (configurable vía .env, o auto-detectar localhost vs producción)
+if (!empty($_ENV['BASE_URL'])) {
+    define('BASE_URL', rtrim($_ENV['BASE_URL'], '/'));
 } else {
-    define('BASE_URL', '');
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
+        define('BASE_URL', '/system-restaurant');
+    } else {
+        define('BASE_URL', '');
+    }
 }
 
 define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
@@ -102,7 +106,17 @@ function requireRole(array $rolesPermitidos): void {
 
     // Permitir al superadmin cambiar el contexto del restaurante
     if (isset($_GET['set_rest_id']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'superadmin') {
-        $_SESSION['restaurante_id'] = (int)$_GET['set_rest_id'];
+        $nuevoRestId = (int)$_GET['set_rest_id'];
+        try {
+            $db = getDB();
+            $st = $db->prepare("SELECT id FROM restaurantes WHERE id = ? AND activo = 1");
+            $st->execute([$nuevoRestId]);
+            if ($st->fetch()) {
+                $_SESSION['restaurante_id'] = $nuevoRestId;
+            }
+        } catch (Exception $e) {
+            // Ignore if db fails, just don't change the context
+        }
     }
 
     // Si es superadmin intentando acceder a una ruta que requiere restaurante (roles/admin, roles/cocina, etc)
@@ -126,3 +140,51 @@ function requireRole(array $rolesPermitidos): void {
         }
     }
 }
+
+
+/**
+ * CSRF Protection
+ */
+function getCsrfToken(): string {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['csrf_token'])) {
+        try {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        } catch (Exception $e) {
+            $_SESSION['csrf_token'] = bin2hex(openssl_random_pseudo_bytes(32));
+        }
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validateCsrfToken($token): bool {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+function verifyCsrfProtection(): void {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $jsonPayload = json_decode(file_get_contents('php://input'), true);
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? ($jsonPayload['csrf_token'] ?? '');
+        
+        if (!validateCsrfToken($token)) {
+            $esAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+                      (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
+                      isset($_SERVER['HTTP_X_CSRF_TOKEN']);
+                      
+            if ($esAjax) {
+                jsonResponse(false, null, 'Error de seguridad: Token CSRF inválido.');
+            } else {
+                http_response_code(403);
+                die('Error de seguridad: Token CSRF inválido.');
+            }
+        }
+    }
+}
+
+getCsrfToken();
+verifyCsrfProtection();

@@ -23,7 +23,7 @@ switch ($accion) {
         $email    = trim($input['email']    ?? '');
         $rol      = trim($input['rol']      ?? '');
         $password = trim($input['password'] ?? '');
-        $activo   = (int)($input['activo']  ?? 1);
+        $activo   = !empty($input['activo']) ? 1 : 0;
 
         $rolesPermitidos = ($rolActual === 'superadmin')
             ? ['admin','atencion','cocina']
@@ -32,6 +32,8 @@ switch ($accion) {
         if (empty($nombre) || empty($email) || !in_array($rol, $rolesPermitidos)) {
             jsonResponse(false, null, 'Datos inválidos o rol no permitido');
         }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonResponse(false, null, 'Correo electrónico inválido');
+        if (mb_strlen($nombre) > 100) jsonResponse(false, null, 'El nombre es demasiado largo (máx 100 caracteres)');
         if (strlen($password) < 6) jsonResponse(false, null, 'La contraseña debe tener al menos 6 caracteres');
 
         // Verificar email único
@@ -50,12 +52,30 @@ switch ($accion) {
         $email    = trim($input['email']    ?? '');
         $rol      = trim($input['rol']      ?? '');
         $password = trim($input['password'] ?? '');
-        $activo   = (int)($input['activo']  ?? 1);
+        $activo   = !empty($input['activo']) ? 1 : 0;
 
         if (!$id || empty($nombre) || empty($email)) jsonResponse(false, null, 'Datos incompletos');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonResponse(false, null, 'Correo electrónico inválido');
+        if (mb_strlen($nombre) > 100) jsonResponse(false, null, 'El nombre es demasiado largo (máx 100 caracteres)');
+
+        // Mismos roles permitidos que en 'crear' — previene escalada de privilegios
+        $rolesPermitidos = ($rolActual === 'superadmin')
+            ? ['admin', 'atencion', 'cocina']
+            : ['atencion', 'cocina'];
+
+        if (!in_array($rol, $rolesPermitidos)) {
+            jsonResponse(false, null, 'Rol no permitido');
+        }
 
         // No puede desactivarse a sí mismo
         if ($id === $usuarioActual && !$activo) jsonResponse(false, null, 'No puedes desactivar tu propia cuenta');
+
+        // No se permite editar un superadmin desde este endpoint
+        $stChkRol = $db->prepare("SELECT rol FROM usuarios WHERE id = ? AND restaurante_id = ?");
+        $stChkRol->execute([$id, $restauranteId]);
+        $usuarioTarget = $stChkRol->fetch();
+        if (!$usuarioTarget) jsonResponse(false, null, 'Usuario no encontrado');
+        if ($usuarioTarget['rol'] === 'superadmin') jsonResponse(false, null, 'No se puede editar una cuenta superadmin desde este panel');
 
         // Verificar email único excluyendo el propio
         $stDup = $db->prepare("SELECT id FROM usuarios WHERE email = ? AND id != ?");

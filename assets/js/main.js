@@ -26,7 +26,13 @@ const Toast = {
         };
         const toast = document.createElement('div');
         toast.className = `toast ${tipo}`;
-        toast.innerHTML = `<i class="fa-solid ${iconMap[tipo] || 'fa-bell'}"></i> <span>${mensaje}</span>`;
+        const icon = document.createElement('i');
+        icon.className = `fa-solid ${iconMap[tipo] || 'fa-bell'}`;
+        const span = document.createElement('span');
+        span.textContent = mensaje;
+        toast.appendChild(icon);
+        toast.appendChild(document.createTextNode(' '));
+        toast.appendChild(span);
         this.container.appendChild(toast);
         setTimeout(() => {
             toast.classList.add('saliendo');

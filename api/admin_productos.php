@@ -23,13 +23,14 @@ switch ($accion) {
         $nombre       = trim($input['nombre']         ?? '');
         $descripcion  = trim($input['descripcion']    ?? '');
         $precio       = floatval($input['precio']     ?? 0);
-        $activo       = (int)($input['activo']        ?? 1);
-        $tieneOpc     = (int)($input['tiene_opciones']?? 0);
+        $activo       = !empty($input['activo']) ? 1 : 0;
+        $tieneOpc     = !empty($input['tiene_opciones']) ? 1 : 0;
         $grupos       = $input['grupos']              ?? [];
 
-        if (empty($nombre) || !$categoriaId || $precio <= 0) {
-            jsonResponse(false, null, 'Nombre, categoría y precio son requeridos');
+        if (empty($nombre) || mb_strlen($nombre) > 100 || !$categoriaId || $precio <= 0 || $precio > 999999) {
+            jsonResponse(false, null, 'Datos inválidos: Nombre (máx 100 caracteres), categoría y precio válidos requeridos');
         }
+        if (mb_strlen($descripcion) > 255) jsonResponse(false, null, 'La descripción es muy larga (máx 255 caracteres)');
 
         // Verificar que la categoría pertenece al restaurante
         $stCat = $db->prepare("SELECT id FROM categorias WHERE id = ? AND restaurante_id = ?");
@@ -49,6 +50,11 @@ switch ($accion) {
                 $msg = "Producto \"$nombre\" creado correctamente";
             } else {
                 if (!$id) { $db->rollBack(); jsonResponse(false, null, 'ID requerido para editar'); }
+                // Verificar que el producto a editar pertenece a este restaurante
+                $stOwn = $db->prepare("SELECT id FROM productos WHERE id = ? AND restaurante_id = ?");
+                $stOwn->execute([$id, $restauranteId]);
+                if (!$stOwn->fetch()) { $db->rollBack(); jsonResponse(false, null, 'Producto no encontrado o no autorizado'); }
+
                 $st = $db->prepare("
                     UPDATE productos
                     SET categoria_id=?, nombre=?, descripcion=?, precio=?, tiene_opciones=?, activo=?
@@ -56,7 +62,7 @@ switch ($accion) {
                 ");
                 $st->execute([$categoriaId, $nombre, $descripcion ?: null, $precio, $tieneOpc, $activo, $id, $restauranteId]);
                 $productoId = $id;
-                // Borrar grupos/valores anteriores para reescribirlos
+                // Borrar grupos/valores anteriores para reescribirlos (el producto_id ya fue validado arriba)
                 $stDelVal = $db->prepare("DELETE ov FROM opciones_valor ov JOIN opciones_grupo og ON og.id = ov.grupo_id WHERE og.producto_id = ?");
                 $stDelVal->execute([$productoId]);
                 $stDelGrp = $db->prepare("DELETE FROM opciones_grupo WHERE producto_id = ?");
@@ -91,7 +97,8 @@ switch ($accion) {
 
         } catch (PDOException $e) {
             $db->rollBack();
-            jsonResponse(false, null, 'Error al guardar: ' . $e->getMessage());
+            error_log('Error al guardar: ' . $e->getMessage());
+            jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
         }
         break;
 
@@ -104,9 +111,9 @@ switch ($accion) {
             $stPed = $db->prepare("
                 SELECT COUNT(*) FROM pedido_items pi
                 JOIN pedidos pe ON pe.id = pi.pedido_id
-                WHERE pi.producto_id = ? AND pe.estado = 'activo'
+                WHERE pi.producto_id = ? AND pe.restaurante_id = ? AND pe.estado = 'activo'
             ");
-            $stPed->execute([$id]);
+            $stPed->execute([$id, $restauranteId]);
             if ($stPed->fetchColumn() > 0) {
                 jsonResponse(false, null, 'No se puede eliminar: el producto está en un pedido activo');
             }
@@ -138,8 +145,10 @@ switch ($accion) {
             if ($e->getCode() === '23000') {
                 jsonResponse(false, null, 'No se puede eliminar: el producto tiene historial de pedidos. Márcalo como inactivo en su lugar.');
             }
-            jsonResponse(false, null, 'Error al eliminar: ' . $e->getMessage());
+            error_log('Error al eliminar: ' . $e->getMessage());
+            jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
         }
+        break; // Evita fallthrough al case default
 
     default:
         jsonResponse(false, null, 'Acción no reconocida');

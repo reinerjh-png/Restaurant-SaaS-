@@ -45,7 +45,7 @@ $stMetodos = $db->prepare("
     SELECT pa.metodo, SUM(pa.monto) AS total, COUNT(*) AS operaciones
     FROM pagos pa
     JOIN pedidos pe ON pe.id = pa.pedido_id
-    WHERE pe.restaurante_id = ? AND DATE(pa.created_at) BETWEEN ? AND ?
+    WHERE pe.restaurante_id = ? AND DATE(pa.created_at) BETWEEN ? AND ? AND pa.anulado = 0
     GROUP BY pa.metodo
     ORDER BY total DESC
 ");

@@ -64,6 +64,7 @@ unset($_SESSION['login_error']);
 
             <!-- Formulario -->
             <form action="<?= BASE_URL ?>/auth/login.php" method="POST" id="form-login">
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
 
                 <div class="form-group">
                     <label class="form-label" for="email">

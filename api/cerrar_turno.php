@@ -27,6 +27,7 @@ try {
         SELECT id, inicio FROM turnos 
         WHERE restaurante_id = ? AND fin IS NULL
         ORDER BY inicio DESC LIMIT 1
+        FOR UPDATE
     ");
     $stTurno->execute([$restauranteId]);
     $turno = $stTurno->fetch();
@@ -36,13 +37,14 @@ try {
         jsonResponse(false, null, 'No hay una caja abierta en este momento.');
     }
 
-    // Recalcular totales desde tabla pagos
+    // Recalcular totales desde tabla pagos (excluyendo anulados)
     $stPagos = $db->prepare("
         SELECT p.metodo, SUM(p.monto) as total
         FROM pagos p
         JOIN pedidos pe ON pe.id = p.pedido_id
         WHERE pe.restaurante_id = ? 
           AND p.created_at >= ?
+          AND p.anulado = 0
         GROUP BY p.metodo
     ");
     $stPagos->execute([$restauranteId, $turno['inicio']]);
@@ -62,10 +64,11 @@ try {
         $totales['general'] += $monto;
     }
 
-    // Calcular número de pedidos cobrados en este turno
+    // Calcular número de pedidos cobrados en este turno (basado en pagos.created_at para consistencia con totales)
     $stPedidos = $db->prepare("
-        SELECT COUNT(id) FROM pedidos 
-        WHERE restaurante_id = ? AND estado = 'cobrado' AND updated_at >= ?
+        SELECT COUNT(DISTINCT p.pedido_id) FROM pagos p
+        JOIN pedidos pe ON pe.id = p.pedido_id
+        WHERE pe.restaurante_id = ? AND p.created_at >= ? AND p.anulado = 0
     ");
     $stPedidos->execute([$restauranteId, $turno['inicio']]);
     $numPedidos = $stPedidos->fetchColumn();
@@ -109,5 +112,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al cerrar la caja: ' . $e->getMessage());
+    error_log('Error al cerrar la caja: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

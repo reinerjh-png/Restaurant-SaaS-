@@ -161,6 +161,7 @@ require_once '../../includes/header.php';
             <button class="modal-close" onclick="Modal.cerrar('modal-gasto')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
             <input type="hidden" name="accion" id="accion" value="registrar">
             <input type="hidden" name="id" id="gasto_id" value="">
             <div class="modal-body">
@@ -202,6 +203,7 @@ require_once '../../includes/header.php';
 
 <!-- Formulario para eliminar oculto -->
 <form method="POST" id="form-eliminar" style="display:none;">
+    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
     <input type="hidden" name="accion" value="eliminar">
     <input type="hidden" name="id" id="eliminar_id" value="">
 </form>

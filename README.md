@@ -35,10 +35,11 @@ Esta plataforma multi-tenant permite la gestión de múltiples restaurantes, con
 - Pedidos clasificados para consumir `Aquí` o para `Llevar`.
 - División de pagos inteligente con soporte multicanal: **Efectivo, Yape, Transferencia, Tarjeta y Otros**.
 
-### 🧾 Módulo de Facturación Electrónica
-- Emisión de **Boletas y Facturas** integradas a la SUNAT.
-- Protección y gestión segura del **Token de API** mediante archivos `.env`.
-- Tickets en formato PDF y térmico con estructura legal validada.
+### 🧾 Módulo de Comprobantes Internos y Consultas
+- Generación de comprobantes internos (Boletas y Facturas para control local).
+- Consultas a servicios externos para validación rápida de DNI/RUC.
+- Protección y gestión segura de tokens de consulta mediante archivos `.env`.
+- Tickets en formato PDF y térmico con estructura organizada.
 - Respaldo atómico de cobros con JSON Snapshots (para reimpresión inmutable).
 
 ### 🧑‍🍳 Monitor de Cocina (KDS) en Tiempo Real
@@ -72,7 +73,7 @@ Esta plataforma multi-tenant permite la gestión de múltiples restaurantes, con
 ├── 📁 assets/        # CSS, JS, Fuentes e Imágenes (UI/UX)
 ├── 📁 auth/          # Módulo de autenticación segura
 ├── 📁 config/        # Conexión a BD y carga de Dotenv
-├── 📁 Database/      # Scripts SQL (db_completa.sql unificada)
+├── 📁 Database/      # Scripts SQL (restaurante_db.sql unificada)
 ├── 📁 includes/      # Componentes reutilizables (Headers, Footers)
 ├── 📁 roles/         # Vistas específicas por cada rol (Admin, Cocina, Atención)
 ├── 📄 .env.example   # Plantilla de variables de entorno
@@ -99,7 +100,7 @@ Esta plataforma multi-tenant permite la gestión de múltiples restaurantes, con
 3. **Base de Datos**
    Importa el archivo maestro de instalación en tu gestor (ej. phpMyAdmin):
    ```text
-   Ruta: Database/db_completa.sql
+   Ruta: Database/restaurante_db.sql
    ```
    *Nota: Este archivo creará las tablas, relaciones, la configuración inicial y optimizará los índices de búsqueda automáticamente.*
 

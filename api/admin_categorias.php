@@ -20,9 +20,9 @@ switch ($accion) {
         $nombre = trim($input['nombre'] ?? '');
         $icono  = trim($input['icono']  ?? '🍽️');
         $orden  = (int)($input['orden'] ?? 0);
-        $activo = (int)($input['activo'] ?? 1);
+        $activo = !empty($input['activo']) ? 1 : 0;
 
-        if (empty($nombre)) jsonResponse(false, null, 'El nombre es requerido');
+        if (empty($nombre) || mb_strlen($nombre) > 100) jsonResponse(false, null, 'El nombre es requerido y debe tener max 100 caracteres');
 
         $st = $db->prepare("INSERT INTO categorias (restaurante_id, nombre, icono, orden, activo) VALUES (?,?,?,?,?)");
         $st->execute([$restauranteId, $nombre, $icono, $orden, $activo]);
@@ -33,9 +33,9 @@ switch ($accion) {
         $nombre = trim($input['nombre']  ?? '');
         $icono  = trim($input['icono']   ?? '🍽️');
         $orden  = (int)($input['orden']  ?? 0);
-        $activo = (int)($input['activo'] ?? 1);
+        $activo = !empty($input['activo']) ? 1 : 0;
 
-        if (!$id || empty($nombre)) jsonResponse(false, null, 'Datos inválidos');
+        if (!$id || empty($nombre) || mb_strlen($nombre) > 100) jsonResponse(false, null, 'Datos inválidos');
 
         $st = $db->prepare("UPDATE categorias SET nombre=?, icono=?, orden=?, activo=? WHERE id=? AND restaurante_id=?");
         $st->execute([$nombre, $icono, $orden, $activo, $id, $restauranteId]);
@@ -46,8 +46,8 @@ switch ($accion) {
         if (!$id) jsonResponse(false, null, 'ID requerido');
 
         // Verificar productos activos en la categoría
-        $stProd = $db->prepare("SELECT COUNT(*) FROM productos WHERE categoria_id = ? AND activo = 1");
-        $stProd->execute([$id]);
+        $stProd = $db->prepare("SELECT COUNT(*) FROM productos WHERE categoria_id = ? AND restaurante_id = ? AND activo = 1");
+        $stProd->execute([$id, $restauranteId]);
         if ($stProd->fetchColumn() > 0) {
             jsonResponse(false, null, 'No se puede eliminar: la categoría tiene productos activos');
         }

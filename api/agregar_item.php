@@ -55,14 +55,24 @@ try {
         $stItem->execute([$pedidoId, $productoId, $cantidad, $precioUnitario, $subtotal, $notas ?: null]);
         $itemId = $db->lastInsertId();
 
-        // Insertar opciones seleccionadas
+        // Insertar opciones seleccionadas (validando que pertenecen a este producto)
         foreach ($selecciones as $sel) {
             $grupoId = (int)($sel['grupo_id'] ?? 0);
             $valorId = (int)($sel['valor_id'] ?? 0);
-            if ($grupoId && $valorId) {
-                $stOpc = $db->prepare("INSERT INTO pedido_item_opciones (item_id, grupo_id, valor_id) VALUES (?,?,?)");
-                $stOpc->execute([$itemId, $grupoId, $valorId]);
-            }
+            if (!$grupoId || !$valorId) continue;
+
+            // Verificar que el grupo pertenece al producto y el valor al grupo
+            $stChkOpc = $db->prepare("
+                SELECT ov.id
+                FROM opciones_valor ov
+                JOIN opciones_grupo og ON og.id = ov.grupo_id
+                WHERE ov.id = ? AND ov.grupo_id = ? AND og.producto_id = ?
+            ");
+            $stChkOpc->execute([$valorId, $grupoId, $productoId]);
+            if (!$stChkOpc->fetch()) continue; // ignorar opción no válida
+
+            $stOpc = $db->prepare("INSERT INTO pedido_item_opciones (item_id, grupo_id, valor_id) VALUES (?,?,?)");
+            $stOpc->execute([$itemId, $grupoId, $valorId]);
         }
 
         $totalAgregado += $subtotal;
@@ -77,5 +87,6 @@ try {
 
 } catch (PDOException $e) {
     $db->rollBack();
-    jsonResponse(false, null, 'Error al agregar items: ' . $e->getMessage());
+    error_log('Error al agregar items: ' . $e->getMessage());
+    jsonResponse(false, null, 'Ocurrió un error interno en el servidor.');
 }

@@ -62,7 +62,7 @@ $fechaFiltro = $_GET['fecha'] ?? date('Y-m-d');
 // Historial de turnos cerrados del día
 $stHistorial = $db->prepare("
     SELECT t.*, u.nombre AS abierto_por,
-           (SELECT COUNT(id) FROM pedidos WHERE restaurante_id = t.restaurante_id AND estado = 'cobrado' AND updated_at BETWEEN t.inicio AND t.fin) as num_pedidos
+           (SELECT COUNT(DISTINCT p.pedido_id) FROM pagos p JOIN pedidos pe ON pe.id = p.pedido_id WHERE pe.restaurante_id = t.restaurante_id AND p.created_at BETWEEN t.inicio AND t.fin) as num_pedidos
     FROM turnos t
     JOIN usuarios u ON u.id = t.usuario_id
     WHERE t.restaurante_id = ? AND t.fin IS NOT NULL
