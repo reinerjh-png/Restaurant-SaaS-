@@ -27,7 +27,7 @@ if ($turnoActivo) {
         SELECT p.metodo, SUM(p.monto) as total
         FROM pagos p
         JOIN pedidos pe ON pe.id = p.pedido_id
-        WHERE pe.restaurante_id = ? AND p.created_at >= ?
+        WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado' AND p.anulado = 0 AND p.created_at >= ?
         GROUP BY p.metodo
     ");
     $stTotalesRT->execute([$restauranteId, $turnoActivo['inicio']]);
@@ -62,7 +62,7 @@ $fechaFiltro = $_GET['fecha'] ?? date('Y-m-d');
 // Historial de turnos cerrados del día
 $stHistorial = $db->prepare("
     SELECT t.*, u.nombre AS abierto_por,
-           (SELECT COUNT(DISTINCT p.pedido_id) FROM pagos p JOIN pedidos pe ON pe.id = p.pedido_id WHERE pe.restaurante_id = t.restaurante_id AND p.created_at BETWEEN t.inicio AND t.fin) as num_pedidos
+           (SELECT COUNT(DISTINCT p.pedido_id) FROM pagos p JOIN pedidos pe ON pe.id = p.pedido_id WHERE pe.restaurante_id = t.restaurante_id AND pe.estado = 'cobrado' AND p.anulado = 0 AND p.created_at BETWEEN t.inicio AND t.fin) as num_pedidos
     FROM turnos t
     JOIN usuarios u ON u.id = t.usuario_id
     WHERE t.restaurante_id = ? AND t.fin IS NOT NULL
@@ -270,13 +270,37 @@ require_once '../../includes/header.php';
     transform: none;
     box-shadow: none;
 }
+.historial-monto {
+    text-align: right;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+.historial-monto .monto-info {
+    text-align: right;
+}
 @media (max-width: 640px) {
     .caja-hero-icon { font-size: 3rem; }
     .caja-hero-title { font-size: 1.35rem; }
     .caja-total-general { flex-direction: column; gap: 4px; text-align: center; }
     .btn-caja { min-width: 100%; }
     .historial-row { grid-template-columns: auto 1fr; }
-    .historial-monto { display: none; }
+    .historial-monto {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--border);
+    }
+    .historial-monto .monto-info {
+        text-align: left;
+    }
+    .historial-monto a {
+        margin-top: 0 !important;
+    }
 }
 </style>
 
@@ -422,14 +446,18 @@ require_once '../../includes/header.php';
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <div class="historial-monto" style="text-align:right;white-space:nowrap;">
+                <div class="historial-monto">
                     <?php if (floatval($t['total_general']) == 0): ?>
-                    <div style="font-size:.85rem;font-weight:700;color:var(--warning,#f59e0b);background:#fffbeb;padding:4px 8px;border-radius:4px;border:1px solid #fde68a;">Sin ventas</div>
-                    <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">0 pedidos</div>
+                    <div class="monto-info">
+                        <div style="font-size:.85rem;font-weight:700;color:var(--warning,#f59e0b);background:#fffbeb;padding:4px 8px;border-radius:4px;border:1px solid #fde68a;display:inline-block;">Sin ventas</div>
+                        <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">0 pedidos</div>
+                    </div>
                     <?php else: ?>
-                    <div style="font-size:1rem;font-weight:800;color:var(--success);">S/ <?= number_format(floatval($t['total_general']), 2) ?></div>
-                    <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:6px;"><?= $t['num_pedidos'] ?> pedido(s)</div>
-                    <a href="turno_detalle.php?id=<?= $t['id'] ?>" class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:4px 8px;">
+                    <div class="monto-info">
+                        <div style="font-size:1rem;font-weight:800;color:var(--success);">S/ <?= number_format(floatval($t['total_general']), 2) ?></div>
+                        <div style="font-size:.72rem;color:var(--text-muted);"><?= $t['num_pedidos'] ?> pedido(s)</div>
+                    </div>
+                    <a href="turno_detalle.php?id=<?= $t['id'] ?>" class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:4px 8px;margin-top:6px;">
                         <i class="fa-solid fa-chart-pie"></i> Detalles
                     </a>
                     <?php endif; ?>

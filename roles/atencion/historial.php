@@ -164,7 +164,7 @@ if ($filtroTurno) {
         SELECT pa.metodo, COALESCE(SUM(pa.monto),0) AS total
         FROM pagos pa
         JOIN pedidos pe ON pe.id = pa.pedido_id
-        WHERE pe.restaurante_id = ? AND pa.created_at BETWEEN ? AND ?
+        WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado' AND pa.anulado = 0 AND pa.created_at BETWEEN ? AND ?
         GROUP BY pa.metodo
     ");
     $stMetodos->execute([$restauranteId, $inicioRango, $finRango]);
@@ -173,7 +173,7 @@ if ($filtroTurno) {
         SELECT pa.metodo, COALESCE(SUM(pa.monto),0) AS total
         FROM pagos pa
         JOIN pedidos pe ON pe.id = pa.pedido_id
-        WHERE pe.restaurante_id = ? AND DATE(pa.created_at) = ?
+        WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado' AND pa.anulado = 0 AND DATE(pa.created_at) = ?
         GROUP BY pa.metodo
     ");
     $stMetodos->execute([$restauranteId, $fecha]);
@@ -203,14 +203,14 @@ require_once '../../includes/header.php';
             </div>
             <?php endif; ?>
 
-            <div class="d-flex align-center justify-between mb-16">
+            <div style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px;">
                 <div>
-                    <h1><i class="fa-solid fa-clock-rotate-left" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Registro de Ventas</h1>
-                    <p><?= $filtroTurno ? '<strong>' . $tituloTurno . '</strong><br>' : '' ?><?= count($pedidos) ?> pedido(s) encontrados</p>
+                    <h1 style="margin-bottom:4px;"><i class="fa-solid fa-clock-rotate-left" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Registro de Ventas</h1>
+                    <p style="margin:0;"><?= $filtroTurno ? '<strong>' . $tituloTurno . '</strong><br>' : '' ?><?= count($pedidos) ?> pedido(s) encontrados</p>
                 </div>
                 <?php if ($filtroTurno && !$fechaParam): ?>
                 <!-- Navegación de turnos -->
-                <div style="display:flex;align-items:center;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <?php if ($turnoAnteriorId): ?>
                     <a href="historial.php?turno_id=<?= $turnoAnteriorId ?>" class="btn btn-ghost btn-sm" title="Turno anterior" style="display:flex;align-items:center;gap:5px;">
                         <i class="fa-solid fa-chevron-left"></i> Anterior

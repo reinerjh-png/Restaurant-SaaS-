@@ -43,7 +43,7 @@ $stMetodos = $db->prepare("
     SELECT pa.metodo, COALESCE(SUM(pa.monto),0) AS total
     FROM pagos pa
     JOIN pedidos pe ON pe.id = pa.pedido_id
-    WHERE pe.restaurante_id = ? AND DATE(pa.created_at) = ?
+    WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado' AND pa.anulado = 0 AND DATE(pa.created_at) = ?
     GROUP BY pa.metodo
 ");
 $stMetodos->execute([$restauranteId, $hoy]);

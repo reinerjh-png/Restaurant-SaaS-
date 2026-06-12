@@ -112,7 +112,7 @@ require_once '../../includes/header.php';
                 <i class="fa-solid fa-file-lines" style="font-size:1.1rem;color:var(--text-secondary);"></i>
                 <span class="metodo-nombre">Comprobante Simple</span>
             </label>
-            <label id="opc-boleta-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('boleta')">
+       <!-- <label id="opc-boleta-label" class="metodo-item" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:2px solid var(--border);transition:all .2s;" onclick="seleccionarTipoComp('boleta')">
                 <input type="radio" name="tipo_comp" value="boleta" id="opc-boleta" style="display:none;">
                 <div class="metodo-check" id="check-comp-boleta"><i class="fa-solid fa-check"></i></div>
                 <i class="fa-solid fa-receipt" style="font-size:1.1rem;color:var(--text-secondary);"></i>
@@ -123,7 +123,7 @@ require_once '../../includes/header.php';
                 <div class="metodo-check" id="check-comp-factura"><i class="fa-solid fa-check"></i></div>
                 <i class="fa-solid fa-file-contract" style="font-size:1.1rem;color:var(--text-secondary);"></i>
                 <span class="metodo-nombre">Factura <span style="font-size:.78rem;color:var(--text-muted);">(RUC)</span></span>
-            </label>
+            </label> -->
         </div>
     </div>
 

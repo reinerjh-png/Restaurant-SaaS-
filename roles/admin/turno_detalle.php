@@ -56,7 +56,7 @@ $stUsuarios = $db->prepare("
     FROM pagos p
     JOIN pedidos pe ON pe.id = p.pedido_id
     JOIN usuarios u ON u.id = pe.usuario_id
-    WHERE pe.restaurante_id = ? AND p.created_at BETWEEN ? AND ?
+    WHERE pe.restaurante_id = ? AND pe.estado = 'cobrado' AND p.anulado = 0 AND p.created_at BETWEEN ? AND ?
     GROUP BY u.id
     ORDER BY total_general DESC
 ");

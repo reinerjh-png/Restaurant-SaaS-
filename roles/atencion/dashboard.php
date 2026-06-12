@@ -38,10 +38,10 @@ require_once '../../includes/header.php';
 ?>
 
 <div style="padding:16px;" class="page-content">
-    <div class="d-flex align-center justify-between mb-16">
+    <div style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px;">
         <div>
-            <h1><i class="fa-solid fa-map-location-dot" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Mapa de Mesas</h1>
-            <p id="hora-actual"></p>
+            <h1 style="margin-bottom:4px;"><i class="fa-solid fa-map-location-dot" style="font-size:1rem;margin-right:6px;color:var(--primary);"></i> Mapa de Mesas</h1>
+            <p id="hora-actual" style="margin:0;"></p>
         </div>
         <!-- Leyenda -->
         <div style="display:flex;gap:12px;align-items:center;font-size:.78rem;font-weight:600;flex-wrap:wrap;">

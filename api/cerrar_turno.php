@@ -43,6 +43,7 @@ try {
         FROM pagos p
         JOIN pedidos pe ON pe.id = p.pedido_id
         WHERE pe.restaurante_id = ? 
+          AND pe.estado = 'cobrado'
           AND p.created_at >= ?
           AND p.anulado = 0
         GROUP BY p.metodo
