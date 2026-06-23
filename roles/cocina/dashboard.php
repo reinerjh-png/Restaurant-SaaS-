@@ -19,6 +19,49 @@ require_once '../../includes/header.php';
 /* Ajustar colores de texto para el estado vacío ahora que el fondo es blanco */
 .cocina-vacia { color: var(--text-secondary); }
 .cocina-vacia .icon { color: var(--border); }
+
+/* ── Fullscreen: clase aplicada por JS al body ── */
+body.cocina-fs-activo .navbar         { display: none !important; }
+body.cocina-fs-activo .sidebar        { display: none !important; }
+body.cocina-fs-activo .sidebar-overlay{ display: none !important; }
+body.cocina-fs-activo .main-content   {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+}
+
+/* Botón fullscreen */
+#btn-fullscreen {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.3);
+    color: white;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+#btn-fullscreen:hover {
+    background: rgba(255,255,255,.2);
+    border-color: rgba(255,255,255,.5);
+}
+#btn-fullscreen .fs-label { display: none; }
+@media (min-width: 768px) {
+    #btn-fullscreen {
+        width: auto;
+        padding: 0 10px;
+    }
+    #btn-fullscreen .fs-label { display: inline; font-size: 0.8rem; }
+}
 </style>
 
 <!-- Audio de alerta -->
@@ -33,6 +76,10 @@ require_once '../../includes/header.php';
             <h1><i class="fa-solid fa-kitchen-set"></i> Panel de Cocina</h1>
             <button id="btn-activar-audio" class="btn btn-sm" style="background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.3); color:white; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor:pointer; transition:all 0.2s;" onclick="activarAudio()">
                 <i class="fa-solid fa-volume-xmark"></i> Activar Sonido
+            </button>
+            <button id="btn-fullscreen" title="Pantalla completa" onclick="toggleFullscreen()">
+                <i class="fa-solid fa-expand" id="ico-fullscreen"></i>
+                <span class="fs-label">Full Screen</span>
             </button>
         </div>
         <div style="font-size:.75rem;opacity:.7;margin-top:4px;" id="cocina-reloj"></div>
@@ -261,6 +308,38 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPedidos,
         10000
     );
+});
+
+/* ── Fullscreen API ── */
+function aplicarModoFS(activo) {
+    const ico   = document.getElementById('ico-fullscreen');
+    const label = document.querySelector('#btn-fullscreen .fs-label');
+
+    if (activo) {
+        document.body.classList.add('cocina-fs-activo');
+        if (ico)   { ico.classList.remove('fa-expand');   ico.classList.add('fa-compress'); }
+        if (label) label.textContent = 'Salir';
+    } else {
+        document.body.classList.remove('cocina-fs-activo');
+        if (ico)   { ico.classList.remove('fa-compress'); ico.classList.add('fa-expand'); }
+        if (label) label.textContent = 'Full Screen';
+    }
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+            .then(() => aplicarModoFS(true))
+            .catch(err => console.warn('Error fullscreen:', err));
+    } else {
+        document.exitFullscreen()
+            .then(() => aplicarModoFS(false));
+    }
+}
+
+// Detecta Escape u otras formas de salir del fullscreen
+document.addEventListener('fullscreenchange', () => {
+    aplicarModoFS(!!document.fullscreenElement);
 });
 </script>
 
